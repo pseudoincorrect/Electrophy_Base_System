@@ -1,0 +1,303 @@
+#include "DAC.h"
+
+// *************************************************************************
+// *************************************************************************
+// 						static function declaration, see .h file	
+// *************************************************************************
+// *************************************************************************
+static void GPIODeInit(const DAC_Conf * dac);
+static void GPIOInit(const DAC_Conf * dac);
+static void SpiInit(const DAC_Conf * dac);
+static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state);
+static void SpiSend(const DAC_Conf * dac, uint16_t * data);
+static void RegisterInit(const DAC_Conf * dac);
+static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue);
+
+
+// *************************************************************************
+// *************************************************************************
+// 						static variables	
+// *************************************************************************
+// *************************************************************************
+static uint8_t   Spi1TxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma TX
+static uint8_t CNA_Channel[8] = {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7};
+static uint8_t CNA_Test[100][8];
+
+//dac info handler
+const DAC_Conf dac1 = {	
+		GPIOC, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, // SCK, MISO, MOSI
+		GPIOD, GPIO_PIN_0, // CSN
+		GPIO_AF6_SPI3, SPI3, SPI3_IRQn,	//alternate function, spi SPI IRQ
+		Spi1TxBuffer
+	};
+
+	
+// *************************************************************************
+// *************************************************************************
+// 										Function definitions																 
+// *************************************************************************
+// *************************************************************************
+// **************************************************************
+// 	 				DAC_Init 
+// **************************************************************
+void DAC_Init(void) 
+{	
+	uint8_t i, j;
+	for (i=0; i<100; i++)
+	{
+		for (j=0; j<8; j++)
+		{
+			if (i< 50)
+				CNA_Test[i][j] = i*4;
+			else
+				CNA_Test[i][j] = 200 - (i*4);
+		}
+	}
+	
+	GPIODeInit(&dac1);
+	GPIOInit(&dac1);		
+	SpiInit(&dac1);						
+	RegisterInit(&dac1); 
+	TIM2Init(268, 80); // (268,8) =  20 kHz sample	
+}
+
+// **************************************************************
+//					GPIODeInit 
+// **************************************************************
+static void GPIODeInit(const DAC_Conf * dac) 
+{
+	HAL_GPIO_DeInit(dac->PORT_SPI, dac->PIN_SCK);
+	HAL_GPIO_DeInit(dac->PORT_SPI, dac->PIN_MOSI);
+	HAL_GPIO_DeInit(dac->PORT_SPI, dac->PIN_MISO);
+	HAL_GPIO_DeInit(dac->PORT_CSN, dac->PIN_CSN);
+}
+
+// **************************************************************
+//					GPIOInit 
+// **************************************************************
+static void GPIOInit(const DAC_Conf * dac) 
+{
+	//init structures for the config
+  GPIO_InitTypeDef GPIO_InitStructure;
+	
+	// configure pins used by SPI : SCK, MISO, MOSI	
+	GPIO_InitStructure.Mode 		 = GPIO_MODE_AF_PP;
+	GPIO_InitStructure.Speed 		 = GPIO_SPEED_FAST ;
+	GPIO_InitStructure.Pull 		 = GPIO_NOPULL;
+	GPIO_InitStructure.Alternate = dac->SPI_FUNCTION; 
+	
+	GPIO_InitStructure.Pin 	= dac->PIN_SCK;
+	HAL_GPIO_Init(dac->PORT_SPI, &GPIO_InitStructure);	
+	GPIO_InitStructure.Pin 	= dac->PIN_MISO;
+	HAL_GPIO_Init(dac->PORT_SPI, &GPIO_InitStructure);
+	GPIO_InitStructure.Pin 	= dac->PIN_MOSI;
+	HAL_GPIO_Init(dac->PORT_SPI, &GPIO_InitStructure);
+	
+	// Configure the chip SELECT pin : CSN
+	GPIO_InitStructure.Pin 	= dac->PIN_CSN;
+	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+	HAL_GPIO_Init(dac->PORT_CSN, &GPIO_InitStructure);	
+	CsnDigitalWrite(dac, HIGH); // set PAD6 HIGH
+}
+	
+//init structures for the config 
+static SPI_HandleTypeDef SpiHandle;
+// **************************************************************
+//					SpiInit
+// **************************************************************
+static void SpiInit(const DAC_Conf * dac)
+{			
+	// Set the SPI parameters 
+  SpiHandle.Instance               = dac->SPI_INSTANCE;
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
+  SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
+  SpiHandle.Init.CLKPolarity       = SPI_POLARITY_LOW;
+  SpiHandle.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
+  SpiHandle.Init.CRCPolynomial     = 7;
+  SpiHandle.Init.DataSize          = SPI_DATASIZE_16BIT;
+  SpiHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+  SpiHandle.Init.NSS               = SPI_NSS_SOFT;
+  SpiHandle.Init.TIMode            = SPI_TIMODE_DISABLED;
+	SpiHandle.Init.Mode 						 = SPI_MODE_MASTER;
+	
+	HAL_SPI_Init(&SpiHandle);
+	
+	// enable SPI2 global interrupt
+  HAL_NVIC_SetPriority(dac->SPI_IRQN, 2, 0);
+	HAL_NVIC_DisableIRQ(dac->SPI_IRQN);
+	
+	//Enable SPI	 
+	dac->SPI_INSTANCE->CR1 |= SPI_CR1_SPE;
+}	
+
+// **************************************************************
+// 					CsnDigitalWrite 
+// **************************************************************
+void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state)
+{
+	if (state)  dac->PORT_CSN->BSRRL |= dac->PIN_CSN; 
+	else 			  dac->PORT_CSN->BSRRH |= dac->PIN_CSN;
+}
+
+// **************************************************************
+//					SpiSend 
+// **************************************************************
+static void SpiSend(const DAC_Conf * dac, uint16_t * data)
+{
+	SPI_TypeDef * spi = dac->SPI_INSTANCE;
+	
+	CsnDigitalWrite(dac, LOW); //N_slave select low
+	
+	spi->DR = *data; 						 // write data to be transmitted to the SPI data register
+
+	while( !(spi->SR & SPI_FLAG_TXE)  ); 	// wait until transmit complete
+	while( !(spi->SR & SPI_FLAG_RXNE) ); // wait until receive complete
+	while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
+	
+	CsnDigitalWrite(dac, HIGH);
+}
+
+// **************************************************************
+// 					RegisterInit 
+// **************************************************************
+static void RegisterInit(const DAC_Conf * dac)
+{
+	// disable auto acknowledgement
+	static uint16_t CTRL0 = 0x0006; //0b00110;
+	static uint16_t CTRL1 = 0x000F; //0b00001111;
+
+	// sending of the instructions to the DAC
+	SpiSend(dac,	&CTRL0);
+	SpiSend(dac,	&CTRL1);
+}
+
+
+static uint8_t dataCnt;
+static uint16_t dataSpi;
+static uint8_t * ptrChannel;
+static uint8_t * bufferSample;
+/**************************************************************/
+//	 				DAC_Refresh
+/**************************************************************/
+void DAC_Refresh(const DAC_Conf * dac, uint8_t * buffer)
+{
+	//get the pointer to the data to send
+	bufferSample = buffer;
+	//get the pointer to the channel number array
+	ptrChannel = CNA_Channel;
+	//set the ammount of data to send
+	dataCnt = CHANNEL_SIZE;
+	// enable interrupt : the sampling is done in the interrupt handler
+	dac->SPI_INSTANCE->CR2 |= SPI_IT_TXE;
+}
+
+/**************************************************************/
+//					SPI_IRQ_Handler
+/**************************************************************/
+void SPI_IRQ_Handler(const DAC_Conf * dac)
+{
+	while(dac->SPI_INSTANCE->SR & SPI_FLAG_BSY);
+	
+	// If buffer TX empty, load next data
+	if (dac->SPI_INSTANCE->SR & SPI_FLAG_TXE)
+	{	
+		if (dataCnt)
+		{	
+			CsnDigitalWrite(dac, HIGH); 
+			dataSpi = (*ptrChannel++ << 12) + (*bufferSample++ << 2) ;
+			dataSpi = *bufferSample++;
+			CsnDigitalWrite(dac, LOW); 
+			dac->SPI_INSTANCE->DR = dataSpi;
+			dataCnt--;
+		}
+		else
+		{
+			CsnDigitalWrite(dac, HIGH); 
+			HAL_NVIC_DisableIRQ(dac->SPI_IRQN);
+		}
+	}
+	dac->SPI_INSTANCE->SR &=  ~(SPI_IT_TXE); // clear flag won't trigger directly an other interrupt
+}
+
+// *************************************************************
+// 	 				SPI3_IRQHandler
+// *************************************************************
+void SPI3_IRQHandler()
+{
+	SPI_IRQ_Handler(&dac1);
+}
+
+uint16_t indiceData;
+// **************************************************************
+// 					DAC_Test
+// **************************************************************
+void DAC_Test(const DAC_Conf * dac)
+{
+	HAL_NVIC_EnableIRQ(dac->SPI_IRQN);
+	DAC_Refresh(&dac1, CNA_Test[indiceData]);
+	indiceData ++;
+	if (indiceData >= 100)
+		indiceData = 0;
+}
+
+static TIM_HandleTypeDef    TimHandle;
+/**************************************************************/
+//					TIM2Init
+/**************************************************************/
+static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue)
+{	
+	TimHandle.Instance = TIM2;
+
+	TimHandle.Init.Period            = reloadValue;
+  TimHandle.Init.Prescaler         = prescalerValue;
+  TimHandle.Init.ClockDivision     = 0;
+  TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  TimHandle.Init.RepetitionCounter = 0;
+ 	HAL_TIM_Base_Init(&TimHandle);
+  
+	// Set the TIMx priority 
+	HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);	
+	// Enable the TIMx global Interrupt 
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+	
+	__HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE); //The specified TIM3 interrupt : update
+  __HAL_TIM_ENABLE(&TimHandle);
+}
+
+/**************************************************************/
+//					TIM2_IRQHandler
+/**************************************************************/
+void TIM2_IRQHandler(void)
+{	
+	if(__HAL_TIM_GET_FLAG(&TimHandle, TIM_FLAG_UPDATE) != RESET)
+	{
+		if(__HAL_TIM_GET_ITSTATUS(&TimHandle, TIM_IT_UPDATE) !=RESET)
+		{
+			DAC_Test(&dac1);
+			__HAL_TIM_CLEAR_IT(&TimHandle, TIM_IT_UPDATE); // Remove TIMx update interrupt flag 
+			__HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_IT_UPDATE);
+		}	
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
