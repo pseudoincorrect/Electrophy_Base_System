@@ -2,31 +2,30 @@
 #include "stm32f4xx_hal.h"
 #include "usb_device.h"
 #include "NRF.h"
-#include "AudioBuffer.h"
+#include "DAC.h"
+#include "ElectrophyData.h"
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
+static void ClockInit(void);
+static void ChooseOutput(Output_device_t  Output_device);
+
+static Output_device_t Output_device = Dac;
 
 int main(void)
 {	
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
- 
-	NRF_Init();
-	
+  HAL_Init();						// Reset of all peripherals, Initializes the Flash interface and the Systick
+  SystemClock_Config(); // Configure the system clock
+	ClockInit(); 					// Initialize all configured peripherals clocks
+	DAC_Init();
 	MX_USB_DEVICE_Init();
+	ChooseOutput(Dac);
+	NRF_Init();
 	
 	while (1)
   {
-		//AudioBuffer_RefreshTest();
-		AudioBuffer_ApplyMask();
+		if (Output_device == Usb)
+			ElectrophyData_ApplyMask();
 	}
 }
 
@@ -58,10 +57,37 @@ void SystemClock_Config(void)
 
 }
 
-
-void MX_GPIO_Init(void)
+static void ClockInit(void)
 {
 // GPIO Ports Clock Enable 
   __GPIOH_CLK_ENABLE();
-  __GPIOA_CLK_ENABLE();
+  __GPIOA_CLK_ENABLE();	
+	__GPIOB_CLK_ENABLE();
+	__GPIOC_CLK_ENABLE();
+	__GPIOD_CLK_ENABLE();
+
+	__GPIOE_CLK_ENABLE();
+	
+	__SPI1_CLK_ENABLE();
+	__SPI2_CLK_ENABLE();
+	__SPI3_CLK_ENABLE();
+
+	__DMA1_CLK_ENABLE();
+	__DMA2_CLK_ENABLE();
+	
+	__TIM2_CLK_ENABLE();
+}
+
+static void ChooseOutput(Output_device_t  Output_device)
+{
+	if (Output_device == Usb)
+	{
+		DAC_Enable(LOW);
+		MX_USB_DEVICE_Enable(HIGH);
+	}
+	else
+	{
+		DAC_Enable(HIGH);
+		MX_USB_DEVICE_Enable(LOW);
+	}
 }

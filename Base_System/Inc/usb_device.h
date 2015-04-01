@@ -48,6 +48,9 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 /* USB_Device init function */	
 void MX_USB_DEVICE_Init(void);
 
+// USB Devive Enable (start or stop USB)	 
+void MX_USB_DEVICE_Enable(uint8_t state);
+	 
 #ifdef __cplusplus
 }
 #endif

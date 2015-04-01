@@ -53,16 +53,30 @@ void MX_USB_DEVICE_Init(void)
   USBD_RegisterClass(&hUsbDeviceFS, &USBD_AUDIO);
 
   USBD_AUDIO_RegisterInterface(&hUsbDeviceFS, &USBD_AUDIO_fops_FS);
-
-  USBD_Start(&hUsbDeviceFS);
-
 }
-/**
-  * @}
-  */
 
-/**
-  * @}
-  */
+void MX_USB_DEVICE_Enable(uint8_t state)
+{
+	if(state)
+		USBD_Start(&hUsbDeviceFS);
+	else
+		USBD_Stop(&hUsbDeviceFS);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

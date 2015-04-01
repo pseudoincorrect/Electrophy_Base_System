@@ -483,9 +483,14 @@
               <FilePath>..\..\Src\NRF.c</FilePath>
             </File>
             <File>
-              <FileName>AudioBuffer.c</FileName>
+              <FileName>DAC.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\Src\AudioBuffer.c</FilePath>
+              <FilePath>..\..\Src\DAC.c</FilePath>
+            </File>
+            <File>
+              <FileName>ElectrophyData.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Src\ElectrophyData.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -571,6 +576,16 @@
               <FileName>stm32f4xx_hal_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_tim_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_tim_ex.c</FilePath>
             </File>
           </Files>
         </Group>

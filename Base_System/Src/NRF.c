@@ -1,17 +1,37 @@
 #include "NRF.h"
 
+// *************************************************************************
+// *************************************************************************
+// 						static function declaration, see .h file	
+// *************************************************************************
+// *************************************************************************
+static void GPIODeInit(const NRF_Conf * nrf);
+static void GPIOInit(const NRF_Conf * nrf);
+static void SpiInit(const NRF_Conf * nrf);
+static void DmaInit(const NRF_Conf * nrf);
+static void CeDigitalWrite(const NRF_Conf * nrf, uint8_t state);
+static void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state);
+static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
+static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
+static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+static void RegisterInit(const NRF_Conf * nrf);
+
+
+// *************************************************************************
+// *************************************************************************
+// 						static variables	
+// *************************************************************************
+// *************************************************************************
 static uint8_t   Spi1TxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma TX
 static uint16_t  Spi1RxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma RX
 
 static uint8_t   Spi2TxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma TX
 static uint16_t  Spi2RxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma RX
 
-static uint8_t   Spi3TxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma TX
-static uint16_t  Spi3RxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma RX
-
 volatile static uint8_t FLAG_PACKET = 0;  //Flag is set when a transmission packet is alread in process
 
-//top right
+//Right
 const NRF_Conf nrf1 = {	
 		GPIOB, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5, // SCK, MISO, MOSI
 		GPIOD, GPIO_PIN_6, // CSN
@@ -23,7 +43,7 @@ const NRF_Conf nrf1 = {
 		Spi1TxBuffer, Spi1RxBuffer
 	};
 
-	//bottom left	
+	//Left	
 const NRF_Conf nrf2 = {	
 		GPIOB, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15, // SCK, MISO, MOSI
 		GPIOB, GPIO_PIN_11,	// CSN
@@ -35,26 +55,19 @@ const NRF_Conf nrf2 = {
 		Spi2TxBuffer, Spi2RxBuffer
 	};
 
-//bottom right
-const NRF_Conf nrf3 = {	
-		GPIOC, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, // SCK, MISO, MOSI
-		GPIOC, GPIO_PIN_9,	// CSN
-		GPIOC, GPIO_PIN_7, // CE
-		GPIOA, GPIO_PIN_9, EXTI9_5_IRQn,	// IRQ
-		GPIO_AF6_SPI3, SPI3,	//alternate function, spi
-		DMA1, DMA1_Stream5, DMA1_Stream2, DMA_CHANNEL_0, 			 // DMA TX, RX, channel
-		DMA1_Stream2_IRQn, DMA_FLAG_TCIF1_5, DMA_FLAG_TCIF2_6, // DMA Irqnumber, mask IRQ TX, RX  
-		Spi3TxBuffer, Spi3RxBuffer
-	};
+
+// *************************************************************************
+// *************************************************************************
+// 										Function definitions																 
+// *************************************************************************
+// *************************************************************************
 	
 // **************************************************************
 // 	 				NRF_Init 
 // **************************************************************
 void NRF_Init(void) 
 {	
-	ClockInit();	
-	
-	AudioBuffer_Init();
+	ElectrophyData_Init();
 	
 	GPIODeInit(&nrf1);
 	GPIODeInit(&nrf2);
@@ -72,22 +85,6 @@ void NRF_Init(void)
 //	NRF_Test(&nrf1);
 //	while (FLAG_PACKET);
 //	NRF_Test(&nrf2);	
-}
-
-// **************************************************************
-//					ClockInit 
-// **************************************************************
-void ClockInit(void)
-{
-	__GPIOD_CLK_ENABLE();
-	__GPIOB_CLK_ENABLE();
-	__GPIOE_CLK_ENABLE();
-	
-	__SPI1_CLK_ENABLE();
-	__SPI2_CLK_ENABLE();
-
-	__DMA1_CLK_ENABLE();
-	__DMA2_CLK_ENABLE();	
 }
 
 // **************************************************************
@@ -286,7 +283,7 @@ void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 {
   //Get the adresse in the buffer where to send the datas
 	//load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) AudioBuffer_WriteNrf();
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_WriteNrf();
 	
 	SpiSend(nrfBackup, &flushRxFifo, 1);
 	SpiSend(nrfBackup, ClearIrqFlag, sizeof(ClearIrqFlag) );
@@ -360,6 +357,7 @@ static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 		while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
 	}
 }
+
 // **************************************************************
 // 					RegisterInit 
 // **************************************************************
@@ -422,7 +420,7 @@ void NRF_Test(const NRF_Conf * nrf)
 	SpiSendThenDma(nrf, &Receive, 1 );
 	
 	// load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) AudioBuffer_WriteNrf(); 
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_WriteNrf(); 
 
 	// Enable the transfer complete interrupt
 	nrf->DMA_RX_INSTANCE->CR |= DMA_IT_TC;
@@ -438,13 +436,19 @@ void NRF_Test(const NRF_Conf * nrf)
 	FLAG_PACKET = 1;
 }
 
-// *************************************************************
-// 	 				DMA2_Stream2_IRQHandler 
-// *************************************************************
-void DMA2_Stream2_IRQHandler(void)
+// **************************************************************
+//					EXTI15_10_IRQHandler
+// **************************************************************
+void EXTI15_10_IRQHandler(void)
 {
-		DmaHandler(&nrf1, &nrf2);	
-}		
+	if (!FLAG_PACKET)
+	{	
+		FLAG_PACKET = 1;
+		ExtiHandler(&nrf2, &nrf1);
+	}
+	//clear exti interrupt
+	__HAL_GPIO_EXTI_CLEAR_IT((&nrf2)->PIN_IRQ); 
+}
 
 // **************************************************************
 //					EXTI2_IRQHandler
@@ -468,21 +472,13 @@ void DMA1_Stream3_IRQHandler(void)
 	DmaHandler(&nrf2, &nrf1);
 }		
 
-// **************************************************************
-//					EXTI15_10_IRQHandler
-// **************************************************************
-void EXTI15_10_IRQHandler(void)
+// *************************************************************
+// 	 				DMA2_Stream2_IRQHandler 
+// *************************************************************
+void DMA2_Stream2_IRQHandler(void)
 {
-	if (!FLAG_PACKET)
-	{	
-		FLAG_PACKET = 1;
-		ExtiHandler(&nrf2, &nrf1);
-	}
-	//clear exti interrupt
-	__HAL_GPIO_EXTI_CLEAR_IT((&nrf2)->PIN_IRQ); 
-}
-
-
+		DmaHandler(&nrf1, &nrf2);	
+}		
 
 
 

@@ -10,7 +10,7 @@
 #include "stm32f4xx_hal_spi.h"
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f4xx_hal_cortex.h"
-#include "AudioBuffer.h"
+#include "ElectrophyData.h"
 
 #define BYTES_PER_FRAME	   32
 #define	DATA_FRAMES				 21
@@ -60,18 +60,8 @@ typedef struct{
 	
 }NRF_Conf;
 
-
-
 /**************************************************************/
-// Main initialization functions
-/**************************************************************/
-//initialize the NRF
-void NRF_Init(void);
-//enable all clock used
-void ClockInit(void);
-
-/**************************************************************/
-// Hardware Initialization functions
+// Private functions
 /**************************************************************/
 // DeInitialize GPIO
 static void GPIODeInit(const NRF_Conf * nrf);
@@ -85,31 +75,30 @@ static void DmaInit(const NRF_Conf * nrf);
 static void CeDigitalWrite(const NRF_Conf * nrf, uint8_t state);
 // set the csn pin state
 static void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state);
-
-/**************************************************************/
-// SPI Communication functions
-/**************************************************************/
 // transmit data with SPI1 
 static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
 // transmit a command before a DMA transfer
 static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
 // manage the handlers for the external interupt
-void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 //manage the handlers for the end of a DMA transfert
-void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+// function used to test the spi of the NRF
+static void RegisterInit(const NRF_Conf * nrf);
+
+/**************************************************************/
+// public functions
+/**************************************************************/
+//initialize the NRF
+void NRF_Init(void);
 //handlers 
 void DMA2_Stream2_IRQHandler(void);
 void EXTI2_IRQHandler(void);
 void DMA1_Stream3_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
-
-/**************************************************************/
-// NRF functions
-/**************************************************************/
-// function used to test the spi of the NRF
-static void RegisterInit(const NRF_Conf * nrf);
 // test the nrf (ask for the adress pipe 2
 void NRF_Test(const NRF_Conf * nrf);
+
 #endif
 
 

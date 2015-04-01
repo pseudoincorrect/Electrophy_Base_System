@@ -10,7 +10,7 @@
 #include "stm32f4xx_hal_cortex.h"
 #include "stm32f4xx_hal_tim.h"
 #include "stm32f4xx_hal_tim_ex.h"
-#include "AudioBuffer.h"
+#include "ElectrophyData.h"
 
 #define BYTES_PER_FRAME	   32
 #define	DATA_FRAMES				 21
@@ -36,9 +36,6 @@ typedef struct{
 	SPI_TypeDef * SPI_INSTANCE;
 	IRQn_Type SPI_IRQN;
 	
-	// Buffers
-	uint8_t * TX_BUFFER;
-	
 }DAC_Conf;
 
 /**************************************************************/
@@ -52,25 +49,32 @@ typedef struct{
 //static void SpiInit(const DAC_Conf * dac);
 // Set the csn pin state
 //static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state);
-// Function used to test the spi of the DAC
-//static void RegisterInit(const DAC_Conf * dac);
 // Transmit data with SPI1 
 //static void SpiSend(const DAC_Conf * dac, uint8_t * data, uint8_t length);
+// Function used to set the register of the DAC 
+//static void RegisterInit(const DAC_Conf * dac);
 // Initialize the timer used to send regularely datas to the DAC
 //static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue);
+// Interrupt handler for spi irq handler
+//static void SPI_IRQ_Handler(const DAC_Conf * dac);
+// called by the SPI IRQ
+//static void SPI_IRQ_Handler(const DAC_Conf * dac);
+// Manage the refreshing of the DAC output
+//static void DAC_Refresh(const DAC_Conf * dac, uint8_t * buffer);
+// send By SPI and interrupt data to the DAC output register
+//static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 
 /**************************************************************/
 //Public functions
 /**************************************************************/
 // Initialize the DAC
 void DAC_Init(void);
-// Interrupt handler for spi irq handler
-void SPI_IRQ_Handler(const DAC_Conf * dac);
-// Test the dac (ask for the adress pipe 2
-void DAC_Test(const DAC_Conf * dac);
-
+// enable DAC refreshing
+void DAC_Enable(uint8_t state);
+// handler for Timer and Spi interrupts
+void TIM2_IRQHandler(void);
+void SPI3_IRQHandler(void);
 
 #endif
-
 
 

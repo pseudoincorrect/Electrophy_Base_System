@@ -12,23 +12,23 @@ static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state);
 static void SpiSend(const DAC_Conf * dac, uint16_t * data);
 static void RegisterInit(const DAC_Conf * dac);
 static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue);
-
+static void SPI_IRQ_Handler(const DAC_Conf * dac);
+static void DAC_Refresh(const DAC_Conf * dac);
+static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static uint8_t   Spi1TxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma TX
-static uint8_t CNA_Channel[8] = {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7};
-static uint8_t CNA_Test[100][8];
+static uint16_t DAC_Channel[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+static uint16_t DAC_Empty[8] 	 = {0, 0, 0, 0, 0, 0, 0, 0};
 
 //dac info handler
 const DAC_Conf dac1 = {	
 		GPIOC, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, // SCK, MISO, MOSI
 		GPIOD, GPIO_PIN_0, // CSN
 		GPIO_AF6_SPI3, SPI3, SPI3_IRQn,	//alternate function, spi SPI IRQ
-		Spi1TxBuffer
 	};
 
 	
@@ -42,23 +42,22 @@ const DAC_Conf dac1 = {
 // **************************************************************
 void DAC_Init(void) 
 {	
-	uint8_t i, j;
-	for (i=0; i<100; i++)
-	{
-		for (j=0; j<8; j++)
-		{
-			if (i< 50)
-				CNA_Test[i][j] = i*4;
-			else
-				CNA_Test[i][j] = 200 - (i*4);
-		}
-	}
-	
 	GPIODeInit(&dac1);
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
-	TIM2Init(268, 80); // (268,8) =  20 kHz sample	
+	TIM2Init(399, 20); // (399,20) =  20 kHz sample	
+}
+
+// **************************************************************
+// 	 				DAC_Enable 
+// **************************************************************
+void DAC_Enable(uint8_t state) 
+{	
+	if (state)
+		 HAL_NVIC_EnableIRQ(TIM2_IRQn);
+	else
+		 HAL_NVIC_DisableIRQ(TIM2_IRQn);
 }
 
 // **************************************************************
@@ -131,10 +130,34 @@ static void SpiInit(const DAC_Conf * dac)
 	dac->SPI_INSTANCE->CR1 |= SPI_CR1_SPE;
 }	
 
+static TIM_HandleTypeDef    TimHandle;
+/**************************************************************/
+//					TIM2Init
+/**************************************************************/
+static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue)
+{	
+	TimHandle.Instance = TIM2;
+
+	TimHandle.Init.Period            = reloadValue;
+  TimHandle.Init.Prescaler         = prescalerValue;
+  TimHandle.Init.ClockDivision     = 0;
+  TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  TimHandle.Init.RepetitionCounter = 0;
+ 	HAL_TIM_Base_Init(&TimHandle);
+  
+	// Set the TIMx priority 
+	HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);	
+	// Enable the TIMx global Interrupt 
+  HAL_NVIC_DisableIRQ(TIM2_IRQn);
+	
+	__HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE); //The specified TIM3 interrupt : update
+  __HAL_TIM_ENABLE(&TimHandle);
+}
+
 // **************************************************************
 // 					CsnDigitalWrite 
 // **************************************************************
-void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state)
+static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state)
 {
 	if (state)  dac->PORT_CSN->BSRRL |= dac->PIN_CSN; 
 	else 			  dac->PORT_CSN->BSRRH |= dac->PIN_CSN;
@@ -172,30 +195,69 @@ static void RegisterInit(const DAC_Conf * dac)
 	SpiSend(dac,	&CTRL1);
 }
 
+/**************************************************************/
+//					TIM2_IRQHandler
+/**************************************************************/
+void TIM2_IRQHandler(void)
+{	
+	if(__HAL_TIM_GET_FLAG(&TimHandle, TIM_FLAG_UPDATE) != RESET)
+	{
+		if(__HAL_TIM_GET_ITSTATUS(&TimHandle, TIM_IT_UPDATE) !=RESET)
+		{
+			DAC_Refresh(&dac1);
+			__HAL_TIM_CLEAR_IT(&TimHandle, TIM_IT_UPDATE); // Remove TIMx update interrupt flag 
+			__HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_IT_UPDATE);
+		}	
+	}
+}
+
+static uint16_t * SampleData;
+// **************************************************************
+// 					DAC_Refresh
+// **************************************************************
+static void DAC_Refresh(const DAC_Conf * dac)
+{
+	if (ElectrophyData_Checkfill())
+	{
+		SampleData = ElectrophyData_ReadDAC();
+		DAC_SendSample(&dac1, SampleData);
+	}
+	else 
+		SpiSend(&dac1, DAC_Empty);
+}
 
 static uint8_t dataCnt;
 static uint16_t dataSpi;
-static uint8_t * ptrChannel;
-static uint8_t * bufferSample;
+static uint16_t * ptrChannel;
+static uint16_t * bufferSample;
 /**************************************************************/
-//	 				DAC_Refresh
+//	 				DAC_SendSample
 /**************************************************************/
-void DAC_Refresh(const DAC_Conf * dac, uint8_t * buffer)
+static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer)
 {
 	//get the pointer to the data to send
 	bufferSample = buffer;
 	//get the pointer to the channel number array
-	ptrChannel = CNA_Channel;
+	ptrChannel = DAC_Channel;
 	//set the ammount of data to send
 	dataCnt = CHANNEL_SIZE;
 	// enable interrupt : the sampling is done in the interrupt handler
 	dac->SPI_INSTANCE->CR2 |= SPI_IT_TXE;
+	HAL_NVIC_EnableIRQ(dac->SPI_IRQN);
+}
+
+// *************************************************************
+// 	 				SPI3_IRQHandler
+// *************************************************************
+void SPI3_IRQHandler()
+{
+	SPI_IRQ_Handler(&dac1);
 }
 
 /**************************************************************/
 //					SPI_IRQ_Handler
 /**************************************************************/
-void SPI_IRQ_Handler(const DAC_Conf * dac)
+static void SPI_IRQ_Handler(const DAC_Conf * dac)
 {
 	while(dac->SPI_INSTANCE->SR & SPI_FLAG_BSY);
 	
@@ -205,8 +267,8 @@ void SPI_IRQ_Handler(const DAC_Conf * dac)
 		if (dataCnt)
 		{	
 			CsnDigitalWrite(dac, HIGH); 
-			dataSpi = (*ptrChannel++ << 12) + (*bufferSample++ << 2) ;
-			dataSpi = *bufferSample++;
+			//dataSpi = (*ptrChannel++ << 12) + (*bufferSample++ << 2) ;
+			dataSpi = (*ptrChannel++ << 8) + (*bufferSample++ << 0) ;
 			CsnDigitalWrite(dac, LOW); 
 			dac->SPI_INSTANCE->DR = dataSpi;
 			dataCnt--;
@@ -219,71 +281,6 @@ void SPI_IRQ_Handler(const DAC_Conf * dac)
 	}
 	dac->SPI_INSTANCE->SR &=  ~(SPI_IT_TXE); // clear flag won't trigger directly an other interrupt
 }
-
-// *************************************************************
-// 	 				SPI3_IRQHandler
-// *************************************************************
-void SPI3_IRQHandler()
-{
-	SPI_IRQ_Handler(&dac1);
-}
-
-uint16_t indiceData;
-// **************************************************************
-// 					DAC_Test
-// **************************************************************
-void DAC_Test(const DAC_Conf * dac)
-{
-	HAL_NVIC_EnableIRQ(dac->SPI_IRQN);
-	DAC_Refresh(&dac1, CNA_Test[indiceData]);
-	indiceData ++;
-	if (indiceData >= 100)
-		indiceData = 0;
-}
-
-static TIM_HandleTypeDef    TimHandle;
-/**************************************************************/
-//					TIM2Init
-/**************************************************************/
-static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue)
-{	
-	TimHandle.Instance = TIM2;
-
-	TimHandle.Init.Period            = reloadValue;
-  TimHandle.Init.Prescaler         = prescalerValue;
-  TimHandle.Init.ClockDivision     = 0;
-  TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
-  TimHandle.Init.RepetitionCounter = 0;
- 	HAL_TIM_Base_Init(&TimHandle);
-  
-	// Set the TIMx priority 
-	HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);	
-	// Enable the TIMx global Interrupt 
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
-	
-	__HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE); //The specified TIM3 interrupt : update
-  __HAL_TIM_ENABLE(&TimHandle);
-}
-
-/**************************************************************/
-//					TIM2_IRQHandler
-/**************************************************************/
-void TIM2_IRQHandler(void)
-{	
-	if(__HAL_TIM_GET_FLAG(&TimHandle, TIM_FLAG_UPDATE) != RESET)
-	{
-		if(__HAL_TIM_GET_ITSTATUS(&TimHandle, TIM_IT_UPDATE) !=RESET)
-		{
-			DAC_Test(&dac1);
-			__HAL_TIM_CLEAR_IT(&TimHandle, TIM_IT_UPDATE); // Remove TIMx update interrupt flag 
-			__HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_IT_UPDATE);
-		}	
-	}
-}
-
-
-
-
 
 
 

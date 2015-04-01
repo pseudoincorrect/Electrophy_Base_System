@@ -12,17 +12,19 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void);
 	
 // *************************************************************************
 // *************************************************************************
-// 						private global variables	
+// 							variables	private and public
 // *************************************************************************
 // *************************************************************************	
 // mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
 uint16_t ChannelMask[NRF_FRAME];
 
+static ElectrophyData_USB ElectrophyDataUSB;
+static ElectrophyData_DAC ElectrophyDataDAC;
+
 // Set which output device we use (DAC or USB)
 Output_device_t  Output_device;
 
-ElectrophyData_USB ElectrophyDataUSB;
-ElectrophyData_DAC ElectrophyDataDAC;
+
 
 
 // *************************************************************************
@@ -73,7 +75,6 @@ void ElectrophyData_Init(void)
 	ElectrophyDataDAC.ReadIndexDac  = 0;
 	ElectrophyDataDAC.ReadIndexNrf  = 0;
 	ElectrophyDataDAC.WriteIndexNrf = 0;
-	
 }
 
 // **************************************************************
@@ -173,7 +174,7 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void)
 	// We increment the buffer indexes fo the next Nrf write
 	ElectrophyDataDAC.WriteIndexNrf++;
 	if ( ElectrophyDataDAC.WriteIndexNrf >= SIZE_BUFFER)
-		ElectrophyDataUSB.WriteIndexNrf = 0;
+		ElectrophyDataDAC.WriteIndexNrf = 0;
 				
 	// return a pointer to the buffer to be written by the DMA 
 	return ElectrophyDataDAC.Data[PreviousWriteIndexNrf][0];
@@ -219,6 +220,9 @@ uint16_t * ElectrophyData_ReadDAC(void)
 	return ElectrophyDataDAC.Data[previousReadIndexNrf][previousReadIndexDac];
 }
 	
+// **************************************************************
+//					ElectrophyData_ApplyMask
+// **************************************************************
 void ElectrophyData_ApplyMask(void)
 {
 	if (ElectrophyDataUSB.MaskEnable)
