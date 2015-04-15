@@ -46,7 +46,7 @@ void DAC_Init(void)
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
-	TIM2Init(399, 20); // (399,20) =  20 kHz sample	
+	TIM2Init(402, 20); // (399,20) =  20 kHz sample	
 }
 
 // **************************************************************
@@ -267,8 +267,7 @@ static void SPI_IRQ_Handler(const DAC_Conf * dac)
 		if (dataCnt)
 		{	
 			CsnDigitalWrite(dac, HIGH); 
-			//dataSpi = (*ptrChannel++ << 12) + (*bufferSample++ << 2) ;
-			dataSpi = (*ptrChannel++ << 8) + (*bufferSample++ << 0) ;
+			dataSpi = (*ptrChannel++ << 8) + (*bufferSample++ << 0) ; // (<< 12) : channel number,  (<< 2) channel value 
 			CsnDigitalWrite(dac, LOW); 
 			dac->SPI_INSTANCE->DR = dataSpi;
 			dataCnt--;

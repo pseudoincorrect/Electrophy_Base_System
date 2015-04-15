@@ -15,17 +15,12 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void);
 // 							variables	private and public
 // *************************************************************************
 // *************************************************************************	
-// mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
-uint16_t ChannelMask[NRF_FRAME];
+uint16_t ChannelMask[NRF_FRAME]; // mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
 
 static ElectrophyData_USB ElectrophyDataUSB;
 static ElectrophyData_DAC ElectrophyDataDAC;
 
-// Set which output device we use (DAC or USB)
-Output_device_t  Output_device;
-
-
-
+Output_device_t  Output_device; // Set which output device we use (DAC or USB)
 
 // *************************************************************************
 // *************************************************************************
@@ -36,15 +31,15 @@ Output_device_t  Output_device;
 // **************************************************************
 //					ElectrophyData_Init
 // **************************************************************
-void ElectrophyData_Init(void)
+void ElectrophyData_Init(Output_device_t  Output_dev)
 {
-	Output_device = Dac;
+	Output_device = Output_dev;
 	
 	//**********************************
 	// Initialization of the USB buffer
 	int i,j,k;
 	for(i=0; i<SIZE_BUFFER; i++) 
-		for(j=2; j<(1 + USB_FRAME); j++) 
+		for(j=2; j<(1 + USB_FRAME); j++)   
 			for(k=2; k<(1 + NRF_FRAME); k++)
 				ElectrophyDataUSB.Data[i][j][k] = 0x0000;
 	
@@ -180,7 +175,6 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void)
 	return ElectrophyDataDAC.Data[PreviousWriteIndexNrf][0];
 }
 
-
 // **************************************************************
 //					ElectrophyData_ReadUSB
 // **************************************************************
@@ -245,7 +239,6 @@ void ElectrophyData_ApplyMask(void)
 		ElectrophyDataUSB.MaskEnable = 0;
 	}
 }
-
 
 volatile static uint8_t flag_refresh = 1;
 uint16_t DataTest[USB_FRAME][NRF_FRAME]; 

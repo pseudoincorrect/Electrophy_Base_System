@@ -46,15 +46,13 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 /* MSP Init */
 
 void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
-{
-  GPIO_InitTypeDef GPIO_InitStruct;
+{ 
+	  GPIO_InitTypeDef GPIO_InitStruct;
   if(hpcd->Instance==USB_OTG_FS)
   {
   /* USER CODE BEGIN USB_OTG_FS_MspInit 0 */
 
   /* USER CODE END USB_OTG_FS_MspInit 0 */
-    /* Peripheral clock enable */
-    __GPIOA_CLK_ENABLE();
   
     /**USB_OTG_FS GPIO Configuration    
     PA11     ------> USB_OTG_FS_DM
@@ -80,10 +78,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
-		
-		/* Enable USB FS Clocks */ 
-    __USB_OTG_FS_CLK_ENABLE();
-		
+				
 		/* Set USBFS Interrupt */
     HAL_NVIC_SetPriority(OTG_FS_IRQn, 3, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);

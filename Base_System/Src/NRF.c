@@ -17,7 +17,6 @@ static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void RegisterInit(const NRF_Conf * nrf);
 
-
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
@@ -31,7 +30,7 @@ static uint16_t  Spi2RxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma RX
 
 volatile static uint8_t FLAG_PACKET = 0;  //Flag is set when a transmission packet is alread in process
 
-//Right
+// Right NRF
 const NRF_Conf nrf1 = {	
 		GPIOB, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5, // SCK, MISO, MOSI
 		GPIOD, GPIO_PIN_6, // CSN
@@ -43,10 +42,10 @@ const NRF_Conf nrf1 = {
 		Spi1TxBuffer, Spi1RxBuffer
 	};
 
-	//Left	
+// LeftNRF
 const NRF_Conf nrf2 = {	
 		GPIOB, GPIO_PIN_13, GPIO_PIN_14, GPIO_PIN_15, // SCK, MISO, MOSI
-		GPIOB, GPIO_PIN_11,	// CSN
+		GPIOB, GPIO_PIN_12,	// CSN
 		GPIOE, GPIO_PIN_15, // CE
 		GPIOE, GPIO_PIN_13, EXTI15_10_IRQn,	// IRQ
 		GPIO_AF5_SPI2, SPI2,	//alternate function, spi
@@ -55,20 +54,16 @@ const NRF_Conf nrf2 = {
 		Spi2TxBuffer, Spi2RxBuffer
 	};
 
-
 // *************************************************************************
 // *************************************************************************
 // 										Function definitions																 
 // *************************************************************************
-// *************************************************************************
-	
+// *************************************************************************	
 // **************************************************************
 // 	 				NRF_Init 
 // **************************************************************
 void NRF_Init(void) 
 {	
-	ElectrophyData_Init();
-	
 	GPIODeInit(&nrf1);
 	GPIODeInit(&nrf2);
 	
@@ -108,10 +103,7 @@ static void GPIOInit(const NRF_Conf * nrf)
 	//init structures for the config
   GPIO_InitTypeDef GPIO_InitStructure;
 	
-	// configure pins used by SPI1
-	// PB3 = SCK
-	// PB4 = MISO
-	// PB5 = MOSI	
+	// configure pins used by SPI1 : SCK, MISO, MOSI	
 	GPIO_InitStructure.Mode 		 = GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed 		 = GPIO_SPEED_FAST ;
 	GPIO_InitStructure.Pull 		 = GPIO_NOPULL;
@@ -124,22 +116,19 @@ static void GPIOInit(const NRF_Conf * nrf)
 	GPIO_InitStructure.Pin 	= nrf->PIN_MOSI;
 	HAL_GPIO_Init(nrf->PORT_SPI, &GPIO_InitStructure);
 	
-	// Configure the chip SELECT pin 
-	// PD6 = CSN
+	// Configure the chip SELECT pin : CSN
 	GPIO_InitStructure.Pin 	= nrf->PIN_CSN;
 	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
 	HAL_GPIO_Init(nrf->PORT_CSN, &GPIO_InitStructure);	
 	nrf->PORT_CSN->BSRRL |= nrf->PIN_CSN; // set PAD6 HIGH
 	
-	// Configure the chip ENABLE pin
-	// PD4 = CE
+	// Configure the chip ENABLE pin : CE
 	GPIO_InitStructure.Pin  = nrf->PIN_CE;
 	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;;
 	HAL_GPIO_Init(nrf->PORT_CE, &GPIO_InitStructure);	
 	nrf->PORT_CE->BSRRH |= nrf->PIN_CE; // set PD4 LOW
 	
-	// Configure the chip IRQ pin   EXTI 
-	// PD2 = IRQ
+	// Configure the chip IRQ pin EXTI : IRQ
 	GPIO_InitStructure.Pin   = nrf->PIN_IRQ;
   GPIO_InitStructure.Mode  = GPIO_MODE_IT_FALLING;
   GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
@@ -339,7 +328,6 @@ static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 	CsnDigitalWrite(nrf, HIGH);
 }
 
-
 // **************************************************************
 //					SpiSendThenDma 
 // **************************************************************
@@ -446,8 +434,7 @@ void EXTI15_10_IRQHandler(void)
 		FLAG_PACKET = 1;
 		ExtiHandler(&nrf2, &nrf1);
 	}
-	//clear exti interrupt
-	__HAL_GPIO_EXTI_CLEAR_IT((&nrf2)->PIN_IRQ); 
+	__HAL_GPIO_EXTI_CLEAR_IT((&nrf2)->PIN_IRQ); //clear exti interrupt
 }
 
 // **************************************************************
@@ -460,8 +447,7 @@ void EXTI2_IRQHandler(void)
 		FLAG_PACKET = 1;
 		ExtiHandler(&nrf1, &nrf2);
 	}
-	//clear exti interrupt
-	__HAL_GPIO_EXTI_CLEAR_IT((&nrf1)->PIN_IRQ); 
+	__HAL_GPIO_EXTI_CLEAR_IT((&nrf1)->PIN_IRQ); //clear exti interrupt
 }
 
 // *************************************************************
@@ -477,7 +463,7 @@ void DMA1_Stream3_IRQHandler(void)
 // *************************************************************
 void DMA2_Stream2_IRQHandler(void)
 {
-		DmaHandler(&nrf1, &nrf2);	
+	DmaHandler(&nrf1, &nrf2);	
 }		
 
 

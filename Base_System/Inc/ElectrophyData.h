@@ -79,7 +79,7 @@ typedef struct
 /**************************************************************/
 
 // Initialize the buffer and its pointers
-void ElectrophyData_Init(void);
+void ElectrophyData_Init(Output_device_t  Output_dev);
 
 // Check how many buffer frames are ready to be send by USB
 uint16_t ElectrophyData_Checkfill(void);
