@@ -7,8 +7,8 @@
 // *************************************************************************
 static uint16_t ElectrophyData_Checkfill_Usb(void);
 static uint16_t ElectrophyData_Checkfill_Dac(void);
-static uint16_t * ElectrophyData_WriteNrfUSB(void);
-static uint16_t * ElectrophyData_WriteNrfDAC(void);		
+static uint16_t * ElectrophyData_Write_USB(void);
+static uint16_t * ElectrophyData_Write_DAC(void);		
 	
 // *************************************************************************
 // *************************************************************************
@@ -17,6 +17,7 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void);
 // *************************************************************************	
 uint16_t ChannelMask[NRF_FRAME]; // mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
 
+static ElectrophyData_NRF ElectrophyDataNRF;
 static ElectrophyData_USB ElectrophyDataUSB;
 static ElectrophyData_DAC ElectrophyDataDAC;
 
@@ -33,11 +34,20 @@ Output_device_t  Output_device; // Set which output device we use (DAC or USB)
 // **************************************************************
 void ElectrophyData_Init(Output_device_t  Output_dev)
 {
+	uint16_t i,j,k;
 	Output_device = Output_dev;
 	
 	//**********************************
+	// Initialization of the NRF buffer
+	for(i=0; i<SIZE_BUFFER; i++) 
+		for(j=2; j< NRF_FRAME; j++) 
+			ElectrophyDataNRF.Data[i][j] = 0x0000;	
+	
+	ElectrophyDataNRF.ReadIndex  = 0;
+	ElectrophyDataNRF.WriteIndex = 0;
+	
+	//**********************************
 	// Initialization of the USB buffer
-	int i,j,k;
 	for(i=0; i<SIZE_BUFFER; i++) 
 		for(j=2; j<(1 + USB_FRAME); j++)   
 			for(k=2; k<(1 + NRF_FRAME); k++)
@@ -124,16 +134,13 @@ static uint16_t ElectrophyData_Checkfill_Dac(void)
 // **************************************************************
 uint16_t * ElectrophyData_WriteNrf(void)
 {
-	if (Output_device == Dac)
-		return ElectrophyData_WriteNrfDAC();
-	else
-		return ElectrophyData_WriteNrfUSB();
+	
 }
 
 // **************************************************************
-//					ElectrophyData_WriteNrfUSB 
+//					ElectrophyData_Write_USB 
 // **************************************************************
-static uint16_t * ElectrophyData_WriteNrfUSB(void)
+static uint16_t * ElectrophyData_Write_USB(void)
 {
 	// MaskIndexNrf and MaskIndexBsb will countain the index of the
 	// last writen Nrf Buffer to apply the mask of the channel number 
@@ -159,9 +166,9 @@ static uint16_t * ElectrophyData_WriteNrfUSB(void)
 }
 
 // **************************************************************
-//					ElectrophyData_WriteNrfDAC 
+//					ElectrophyData_Write_DAC 
 // **************************************************************
-static uint16_t * ElectrophyData_WriteNrfDAC(void)
+static uint16_t * ElectrophyData_Write_DAC(void)
 {
 	static uint16_t PreviousWriteIndexNrf;
 	PreviousWriteIndexNrf = ElectrophyDataDAC.WriteIndexNrf;
@@ -176,9 +183,9 @@ static uint16_t * ElectrophyData_WriteNrfDAC(void)
 }
 
 // **************************************************************
-//					ElectrophyData_ReadUSB
+//					ElectrophyData_Read_USB
 // **************************************************************
-uint16_t * ElectrophyData_ReadUSB(void)
+uint16_t * ElectrophyData_Read_USB(void)
 {
 	static uint16_t previousReadUsb;
 	previousReadUsb = ElectrophyDataUSB.ReadIndexUsb;

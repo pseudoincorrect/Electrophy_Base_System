@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "stm32f4xx.h"
 
-#define	SIZE_BUFFER	 200
+#define	SIZE_BUFFER	 100
 
 #define NRF_FRAME	   32
 #define USB_FRAME	 	 4 
@@ -22,7 +22,17 @@ typedef enum{Dac, Usb} Output_device_t;
 //					Structures
 /**************************************************************/
 
-// handler of the buffer and its pointers
+// handler of the buffer NRF sample buffer
+typedef struct
+{
+	uint16_t Data[SIZE_BUFFER][NRF_FRAME]; 
+	
+	uint16_t	ReadIndex;
+	uint16_t	WriteIndex;
+	
+}ElectrophyData_NRF;
+
+// handler of the buffer and its pointers for the USB buffer
 typedef struct
 {
 	// a buffer of SIZE_BUFFER usb frames 
@@ -56,7 +66,7 @@ typedef struct
 }ElectrophyData_USB;
 
 
-// handler of the buffer and its pointers
+// handler of the buffer and its pointers for the DAC buffer
 typedef struct
 {
 	// Cuffer of SIZE_BUFFER of NRF_DAC_NRF NRF frames
@@ -88,11 +98,11 @@ uint16_t ElectrophyData_Checkfill(void);
 
 // function called to manage the writing of ONE Nrf buffer to the buffer
 uint16_t * ElectrophyData_WriteNrf(void);
-//static uint16_t * ElectrophyData_WriteNrfUSB(void);
-//static uint16_t * ElectrophyData_WriteNrfDAC(void);	
+//static uint16_t * ElectrophyData_Write_USB(void);
+//static uint16_t * ElectrophyData_Write_DAC(void);	
 
 // function called to manage the reading of one USB buffer 
-uint16_t * ElectrophyData_ReadUSB(void);
+uint16_t * ElectrophyData_Read_USB(void);
 uint16_t  * ElectrophyData_ReadDAC(void);
 
 // function called to manage the masking of a NRF packet
