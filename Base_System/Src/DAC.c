@@ -21,8 +21,8 @@ static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static uint16_t DAC_Channel[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-static uint16_t DAC_Empty[8] 	 = {0, 0, 0, 0, 0, 0, 0, 0};
+static uint16_t DAC_Channel[CHANNEL_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
+static uint16_t DAC_Empty[CHANNEL_SIZE] 	= {0, 0, 0, 0, 0, 0, 0, 0};
 
 //dac info handler
 const DAC_Conf dac1 = {	
@@ -217,9 +217,9 @@ static uint16_t * SampleData;
 // **************************************************************
 static void DAC_Refresh(const DAC_Conf * dac)
 {
-	if (ElectrophyData_Checkfill())
+	if (ElectrophyData_Checkfill_DAC())
 	{
-		SampleData = ElectrophyData_ReadDAC();
+		SampleData = ElectrophyData_Read_DAC();
 		DAC_SendSample(&dac1, SampleData);
 	}
 	else 

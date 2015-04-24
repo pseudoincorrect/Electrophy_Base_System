@@ -11,14 +11,8 @@
 #include "stm32f4xx_hal_tim.h"
 #include "stm32f4xx_hal_tim_ex.h"
 #include "ElectrophyData.h"
+#include "CommonInclude.h"
 
-#define BYTES_PER_FRAME	   32
-#define	DATA_FRAMES				 21
-#define CHANNEL_SIZE 			 8
-
-/* GPIO command */
-#define LOW		0
-#define HIGH	1
 
 typedef struct{
 	//SPI port/pin config

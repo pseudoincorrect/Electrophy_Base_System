@@ -272,7 +272,7 @@ void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 {
   //Get the adresse in the buffer where to send the datas
 	//load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_WriteNrf();
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_Write_NRF();
 	
 	SpiSend(nrfBackup, &flushRxFifo, 1);
 	SpiSend(nrfBackup, ClearIrqFlag, sizeof(ClearIrqFlag) );
@@ -408,7 +408,7 @@ void NRF_Test(const NRF_Conf * nrf)
 	SpiSendThenDma(nrf, &Receive, 1 );
 	
 	// load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_WriteNrf(); 
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_Write_NRF(); 
 
 	// Enable the transfer complete interrupt
 	nrf->DMA_RX_INSTANCE->CR |= DMA_IT_TC;

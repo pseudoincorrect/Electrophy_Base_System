@@ -5,8 +5,6 @@
 // 						static function declarations, see .h file	
 // *************************************************************************
 // *************************************************************************
-static uint16_t ElectrophyData_Checkfill_Usb(void);
-static uint16_t ElectrophyData_Checkfill_Dac(void);
 static uint16_t * ElectrophyData_Write_USB(void);
 static uint16_t * ElectrophyData_Write_DAC(void);		
 	
@@ -15,7 +13,7 @@ static uint16_t * ElectrophyData_Write_DAC(void);
 // 							variables	private and public
 // *************************************************************************
 // *************************************************************************	
-uint16_t ChannelMask[NRF_FRAME]; // mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
+uint16_t ChannelMask[BYTES_PER_FRAME]; // mask with the number of the channel in the right order 0x0100, 0x0200, 0x0300, ... 
 
 static ElectrophyData_NRF ElectrophyDataNRF;
 static ElectrophyData_USB ElectrophyDataUSB;
@@ -40,7 +38,7 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	//**********************************
 	// Initialization of the NRF buffer
 	for(i=0; i<SIZE_BUFFER; i++) 
-		for(j=2; j< NRF_FRAME; j++) 
+		for(j=2; j< BYTES_PER_FRAME; j++) 
 			ElectrophyDataNRF.Data[i][j] = 0x0000;	
 	
 	ElectrophyDataNRF.ReadIndex  = 0;
@@ -50,10 +48,10 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	// Initialization of the USB buffer
 	for(i=0; i<SIZE_BUFFER; i++) 
 		for(j=2; j<(1 + USB_FRAME); j++)   
-			for(k=2; k<(1 + NRF_FRAME); k++)
+			for(k=2; k<(1 + BYTES_PER_FRAME); k++)
 				ElectrophyDataUSB.Data[i][j][k] = 0x0000;
 	
-	for(i=0, j=0; i<NRF_FRAME; i++)
+	for(i=0, j=0; i<BYTES_PER_FRAME; i++)
 	{
 		ChannelMask[i] = ( j + 1); // << 8;
 		j++;
@@ -73,7 +71,7 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	//**********************************	
 	// Initialization of the DAC buffer
 	for(i=0; i<SIZE_BUFFER; i++) 
-		for(j=2; j<(1 + NRF_DAC_FRAME); j++) 
+		for(j=2; j<(1 + NRF_CHANNEL_FRAME); j++) 
 			for(k=2; k<(1 + DAC_FRAME); k++)
 				ElectrophyDataDAC.Data[i][j][k] = 0x0000;	
 	
@@ -82,59 +80,58 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	ElectrophyDataDAC.WriteIndexNrf = 0;
 }
 
+// *************************************************************************
+// 									CheckFill	Functions
+// *************************************************************************
+
 // **************************************************************
-//					ElectrophyData_CheckFill 
+//					ElectrophyData_CheckFill_NRF
 // **************************************************************
-uint16_t ElectrophyData_Checkfill(void)
+uint16_t ElectrophyData_Checkfill_NRF(void)
 {
-	if (Output_device == Dac)
-		return ElectrophyData_Checkfill_Dac();
+	if (ElectrophyDataNRF.WriteIndex == ElectrophyDataNRF.ReadIndex)
+		return 0;
 	else
-		return ElectrophyData_Checkfill_Usb();
+		return 1;
 }
 
 // **************************************************************
-//					ElectrophyData_CheckFill_Usb 
+//					ElectrophyData_Checkfill_USB 
 // **************************************************************
-static uint16_t ElectrophyData_Checkfill_Usb(void)
+uint16_t ElectrophyData_Checkfill_USB(void)
 {
-	int diff = ElectrophyDataUSB.WriteIndexUsb - ElectrophyDataUSB.ReadIndexUsb;
-	uint16_t result; 
-	
-	if (diff > 0)
-		result = (uint16_t) diff;
-	else if (diff < 0)
-		result = (uint16_t) (SIZE_BUFFER - ElectrophyDataUSB.ReadIndexUsb + ElectrophyDataUSB.WriteIndexUsb);
+	if (ElectrophyDataUSB.WriteIndexUsb == ElectrophyDataUSB.ReadIndexUsb)
+		return 0;
 	else
-		result = 0;
-
-	return result;
+		return 1;
 }
 
 // **************************************************************
-//					ElectrophyData_CheckFill_Dac 
+//					ElectrophyData_Checkfill_DAC 
 // **************************************************************
-static uint16_t ElectrophyData_Checkfill_Dac(void)
+uint16_t ElectrophyData_Checkfill_DAC(void)
 {
-	int diff = ElectrophyDataDAC.WriteIndexNrf - ElectrophyDataDAC.ReadIndexNrf;
-	uint16_t result; 
-	
-	if (diff > 0)
-		result = (uint16_t) diff;
-	else if (diff < 0)
-		result = (uint16_t) (SIZE_BUFFER - ElectrophyDataUSB.ReadIndexUsb + ElectrophyDataUSB.WriteIndexUsb);
+	if (ElectrophyDataDAC.WriteIndexNrf == ElectrophyDataDAC.ReadIndexNrf)
+		return 0;
 	else
-		result = 0;
-
-	return result;
+		return 1;
 }
 
+// *************************************************************************
+// 									Write	Functions
+// *************************************************************************
+
 // **************************************************************
-//					ElectrophyData_WriteNrf 
+//					ElectrophyData_Write_NRF 
 // **************************************************************
-uint16_t * ElectrophyData_WriteNrf(void)
+uint8_t * ElectrophyData_Write_NRF(void)
 {
+	ElectrophyDataNRF.WriteIndex++;
 	
+	if (ElectrophyDataNRF.WriteIndex >= SIZE_BUFFER)
+		ElectrophyDataNRF.WriteIndex = 0;
+	
+	return ElectrophyDataNRF.Data[ElectrophyDataNRF.WriteIndex];
 }
 
 // **************************************************************
@@ -182,6 +179,26 @@ static uint16_t * ElectrophyData_Write_DAC(void)
 	return ElectrophyDataDAC.Data[PreviousWriteIndexNrf][0];
 }
 
+// *************************************************************************
+// 									Read Functions
+// *************************************************************************
+
+// **************************************************************
+//					ElectrophyData_Read_NRF
+// **************************************************************
+uint8_t * ElectrophyData_Read_NRF(void)
+{
+	static uint16_t previousReadNRF;
+	previousReadNRF = ElectrophyDataNRF.ReadIndex;
+	
+	ElectrophyDataNRF.ReadIndex++;
+	
+	if(ElectrophyDataNRF.ReadIndex >= SIZE_BUFFER)
+		ElectrophyDataNRF.ReadIndex = 0;
+	
+	return ElectrophyDataNRF.Data[ElectrophyDataNRF.ReadIndex];
+}
+
 // **************************************************************
 //					ElectrophyData_Read_USB
 // **************************************************************
@@ -199,9 +216,9 @@ uint16_t * ElectrophyData_Read_USB(void)
 }
 
 // **************************************************************
-//					ElectrophyData_ReadDAC
+//					ElectrophyData_Read_DAC
 // **************************************************************
-uint16_t * ElectrophyData_ReadDAC(void)
+uint16_t * ElectrophyData_Read_DAC(void)
 {
 	static uint16_t previousReadIndexDac, previousReadIndexNrf;
 	
@@ -210,7 +227,7 @@ uint16_t * ElectrophyData_ReadDAC(void)
 	 
 	
 	ElectrophyDataDAC.ReadIndexDac++;
-	if(ElectrophyDataDAC.ReadIndexDac >= NRF_DAC_FRAME)
+	if(ElectrophyDataDAC.ReadIndexDac >= NRF_CHANNEL_FRAME)
 	{
 		ElectrophyDataDAC.ReadIndexDac = 0;
 		
@@ -221,78 +238,30 @@ uint16_t * ElectrophyData_ReadDAC(void)
 	return ElectrophyDataDAC.Data[previousReadIndexNrf][previousReadIndexDac];
 }
 	
-// **************************************************************
-//					ElectrophyData_ApplyMask
-// **************************************************************
-void ElectrophyData_ApplyMask(void)
+// *************************************************************************
+// 									Data Process Functions
+// *************************************************************************
+void ElectrophyData_Process(void)
 {
-	if (ElectrophyDataUSB.MaskEnable)
+	if (ElectrophyData_Checkfill_NRF())
 	{
-		// get the pointer to where we need to apply the channel mask 
-		uint16_t * ToMask = ElectrophyDataUSB.Data[ElectrophyDataUSB.MaskIndexUsb][ElectrophyDataUSB.MaskIndexNrf];
-		// get the pointer to the mask
-		uint16_t * Mask = ChannelMask;
-		int8_t tmp;
-		
-		uint8_t i = 0;
-		for (i=0; i<NRF_FRAME; i++)
+		uint16_t i,j;
+		if (COMPRESS)
 		{	
-			tmp = ((*ToMask & 0x00FF) - 128);
-			*ToMask  =  tmp << 8;
-			*ToMask |= *Mask;
-			ToMask++;
-			Mask++;
+			if(Output_device == Usb)
+				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
+			else
+				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
 		}
-		ElectrophyDataUSB.MaskEnable = 0;
-	}
-}
-
-volatile static uint8_t flag_refresh = 1;
-uint16_t DataTest[USB_FRAME][NRF_FRAME]; 
-uint16_t time = 0, freq = 0, cnt = 0;
-// **************************************************************
-//					ElectrophyData_RefreshTest
-// **************************************************************
-void ElectrophyData_RefreshTest(void)
-{
-	if(flag_refresh)		
-	{	
-		uint8_t i, j, cnt;
-		for(i = 0; i < USB_FRAME; i++) 
-		{		
-			for(j = 0; j < NRF_FRAME; j++)
-			{
-				DataTest[i][j] = time << 8;
-				if (cnt>=8)
-				{	
-					time++;
-					cnt = 0;
-				}
-				if (time > freq)
-				{
-					time = 0;
-					freq++;
-					if (freq > 127)
-						freq = 0;
-				}
-			}
-			flag_refresh = 0;
+		else
+		{
+			if(Output_device == Usb)
+				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
+			else
+				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
 		}
 	}
 }
-
-// **************************************************************
-//					ElectrophyData_TestUsb
-// **************************************************************
-uint16_t * ElectrophyData_TestUsb(void)
-{
-	flag_refresh = 1;
-	return &(DataTest[0][0]);	
-}
-
-
-
-
 
 
 

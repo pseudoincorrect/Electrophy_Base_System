@@ -4,14 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "stm32f4xx.h"
-
-#define	SIZE_BUFFER	 100
-
-#define NRF_FRAME	   32
-#define USB_FRAME	 	 4 
-
-#define NRF_DAC_FRAME	4
-#define DAC_FRAME	    8
+#include "CommonInclude.h"
+#include "FBAR.h"
 
 /**************************************************************/
 //					Enum
@@ -25,7 +19,7 @@ typedef enum{Dac, Usb} Output_device_t;
 // handler of the buffer NRF sample buffer
 typedef struct
 {
-	uint16_t Data[SIZE_BUFFER][NRF_FRAME]; 
+	uint8_t Data[SIZE_BUFFER][BYTES_PER_FRAME]; 
 	
 	uint16_t	ReadIndex;
 	uint16_t	WriteIndex;
@@ -37,7 +31,7 @@ typedef struct
 {
 	// a buffer of SIZE_BUFFER usb frames 
   // which countain USB_FRAME nrf frames
-	uint16_t Data[SIZE_BUFFER][USB_FRAME][NRF_FRAME]; 
+	uint16_t Data[SIZE_BUFFER][USB_FRAME][BYTES_PER_FRAME]; 
 		
 	// index of the X1th element of Data[X1][0][0]
 	// used to send a USB packet form the buffer to the USB periph
@@ -71,7 +65,7 @@ typedef struct
 {
 	// Cuffer of SIZE_BUFFER of NRF_DAC_NRF NRF frames
 	// each Nrf frame contain DAC_FRAME Dac frame 
-	uint16_t Data[SIZE_BUFFER][NRF_DAC_FRAME][DAC_FRAME]; 
+	uint16_t Data[SIZE_BUFFER][NRF_FRAME][DAC_FRAME]; 
 		
 	// index of the X2th element of Data[X1][X2][0]
 	// used to send a USB packet form the buffer to the USB periph
@@ -92,27 +86,24 @@ typedef struct
 void ElectrophyData_Init(Output_device_t  Output_dev);
 
 // Check how many buffer frames are ready to be send by USB
-uint16_t ElectrophyData_Checkfill(void);
-//static uint16_t ElectrophyData_Checkfill_Usb(void);
-//static uint16_t ElectrophyData_Checkfill_Dac(void);
+uint16_t ElectrophyData_Checkfill_NRF(void);
+uint16_t ElectrophyData_Checkfill_USB(void);
+uint16_t ElectrophyData_Checkfill_DAC(void);
 
 // function called to manage the writing of ONE Nrf buffer to the buffer
-uint16_t * ElectrophyData_WriteNrf(void);
+uint8_t * ElectrophyData_Write_NRF(void);
 //static uint16_t * ElectrophyData_Write_USB(void);
 //static uint16_t * ElectrophyData_Write_DAC(void);	
 
 // function called to manage the reading of one USB buffer 
+uint8_t * ElectrophyData_Read_NRF(void);
 uint16_t * ElectrophyData_Read_USB(void);
-uint16_t  * ElectrophyData_ReadDAC(void);
+uint16_t * ElectrophyData_Read_DAC(void);
 
-// function called to manage the masking of a NRF packet
-void ElectrophyData_ApplyMask (void);
-
-// USB frame test functions   
-void ElectrophyData_RefreshTest(void);
-uint16_t * ElectrophyData_TestUsb(void);
-
- #endif
+//process function to decompress datas to output buffer (USB or DAC)
+void ElectrophyData_Process(void);
+	
+#endif
 
 
 

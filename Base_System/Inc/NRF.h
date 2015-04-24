@@ -11,15 +11,8 @@
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f4xx_hal_cortex.h"
 #include "ElectrophyData.h"
+#include "CommonInclude.h"
 
-#define BYTES_PER_FRAME	   32
-#define	DATA_FRAMES				 21
-
-/* GPIO command */
-#define LOW		0
-#define HIGH	1
-
-#define DEBUG 1
 
 typedef struct{
 	//SPI port/pin config
