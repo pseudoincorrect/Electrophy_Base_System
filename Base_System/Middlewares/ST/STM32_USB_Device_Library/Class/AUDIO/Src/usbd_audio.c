@@ -452,7 +452,7 @@ uint16_t fill;
   */
 static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {		
-	while (ElectrophyData_Checkfill() <= 0){;}
+	while (ElectrophyData_Checkfill_USB() <= 0){;}
 		USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)ElectrophyData_Read_USB()), 256); //256
 	
 	/*	ElectrophyData_RefreshTest();	

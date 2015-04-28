@@ -135,7 +135,7 @@ static void GPIOInit(const NRF_Conf * nrf)
   GPIO_InitStructure.Pull  = GPIO_NOPULL;
   HAL_GPIO_Init(nrf->PORT_IRQ, &GPIO_InitStructure);
   // Enable and set IRQ_Pin to the highest priority 
-  HAL_NVIC_SetPriority(nrf->IRQ_EXTI_LINE, 0x00, 0x01);
+  HAL_NVIC_SetPriority(nrf->IRQ_EXTI_LINE, 0x00, 0x00);
   HAL_NVIC_EnableIRQ(nrf->IRQ_EXTI_LINE);
 }
 	
@@ -148,7 +148,7 @@ static void SpiInit(const NRF_Conf * nrf)
 {			
 	// Set the SPI parameters 
   SpiHandle.Instance               = nrf->SPI_INSTANCE;
-  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
   SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
   SpiHandle.Init.CLKPolarity       = SPI_POLARITY_LOW;
@@ -220,7 +220,7 @@ static void DmaInit(const NRF_Conf * nrf)
 	nrf->DMA_RX_INSTANCE->PAR  = (uint32_t) &(nrf->SPI_INSTANCE->DR); // src
 	   
 	// Set the DMA interupt in the vector interrupt (general) register	 
-	HAL_NVIC_SetPriority(nrf->DMA_IRQ_VEC, 0, 0);
+	HAL_NVIC_SetPriority(nrf->DMA_IRQ_VEC, 1, 0);
 	HAL_NVIC_EnableIRQ(nrf->DMA_IRQ_VEC);	 
 		 
 	// Enable SPI	 

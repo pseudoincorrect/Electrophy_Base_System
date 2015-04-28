@@ -46,7 +46,7 @@ void DAC_Init(void)
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
-	TIM2Init(402, 20); // (399,20) =  20 kHz sample	
+	TIM2Init(230, 20); // (399,20) =  20 kHz sample	
 }
 
 // **************************************************************
@@ -108,7 +108,7 @@ static void SpiInit(const DAC_Conf * dac)
 {			
 	// Set the SPI parameters 
   SpiHandle.Instance               = dac->SPI_INSTANCE;
-  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
   SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
   SpiHandle.Init.CLKPolarity       = SPI_POLARITY_LOW;
@@ -146,7 +146,7 @@ static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue)
  	HAL_TIM_Base_Init(&TimHandle);
   
 	// Set the TIMx priority 
-	HAL_NVIC_SetPriority(TIM2_IRQn, 1, 0);	
+	HAL_NVIC_SetPriority(TIM2_IRQn, 2, 0);	
 	// Enable the TIMx global Interrupt 
   HAL_NVIC_DisableIRQ(TIM2_IRQn);
 	
