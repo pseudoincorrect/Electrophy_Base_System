@@ -56,28 +56,28 @@ typedef struct{
 /**************************************************************/
 // Private functions
 /**************************************************************/
-// DeInitialize GPIO
-static void GPIODeInit(const NRF_Conf * nrf);
-// Initialize GPIO
-static void GPIOInit(const NRF_Conf * nrf);
-// initialization SPI1 
-static void SpiInit(const NRF_Conf * nrf);
-// initialization DMA1Stream3 
-static void DmaInit(const NRF_Conf * nrf);
-// set the ce pin state
-static void CeDigitalWrite(const NRF_Conf * nrf, uint8_t state);
-// set the csn pin state
-static void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state);
-// transmit data with SPI1 
-static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
-// transmit a command before a DMA transfer
-static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
-// manage the handlers for the external interupt
-static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
-//manage the handlers for the end of a DMA transfert
-static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
-// function used to test the spi of the NRF
-static void RegisterInit(const NRF_Conf * nrf);
+//// DeInitialize GPIO
+//static void GPIODeInit(const NRF_Conf * nrf);
+//// Initialize GPIO
+//static void GPIOInit(const NRF_Conf * nrf);
+//// initialization SPI1 
+//static void SpiInit(const NRF_Conf * nrf);
+//// initialization DMA1Stream3 
+//static void DmaInit(const NRF_Conf * nrf);
+//// set the ce pin state
+//static void CeDigitalWrite(const NRF_Conf * nrf, uint8_t state);
+//// set the csn pin state
+//static void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state);
+//// transmit data with SPI1 
+//static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
+//// transmit a command before a DMA transfer
+//static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
+//// manage the handlers for the external interupt
+//static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+////manage the handlers for the end of a DMA transfert
+//static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
+//// function used to test the spi of the NRF
+//static void RegisterInit(const NRF_Conf * nrf);
 
 /**************************************************************/
 // public functions

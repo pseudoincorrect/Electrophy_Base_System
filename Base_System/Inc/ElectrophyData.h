@@ -19,7 +19,7 @@ typedef enum{Dac, Usb} Output_device_t;
 // handler of the buffer NRF sample buffer
 typedef struct
 {
-	uint8_t Data[SIZE_BUFFER_NRF][BYTES_PER_FRAME]; 
+	uint8_t Data[SIZE_BUFFER_NRF + 1][BYTES_PER_FRAME]; 
 	
 	uint16_t	ReadIndex;
 	uint16_t	WriteIndex;
@@ -31,7 +31,7 @@ typedef struct
 {
 	// a buffer of SIZE_BUFFER usb frames 
   // which countain USB_FRAME nrf frames
-	uint16_t Data[SIZE_BUFFER_USB][USB_FRAME][BYTES_PER_FRAME]; 
+	uint16_t Data[SIZE_BUFFER_USB + 1][USB_FRAME][BYTES_PER_FRAME]; 
 		
 	// index of the X1th element of Data[X1][0][0]
 	// used to send a USB packet form the buffer to the USB periph
@@ -65,7 +65,7 @@ typedef struct
 {
 	// Cuffer of SIZE_BUFFER of NRF_DAC_NRF NRF frames
 	// each Nrf frame contain DAC_FRAME Dac frame 
-	uint16_t Data[SIZE_BUFFER_DAC][DAC_FRAME][CHANNEL_NUMBER]; 
+	uint16_t Data[SIZE_BUFFER_DAC + 1][DAC_FRAME][CHANNEL_NUMBER]; 
 		
 	// index of the X2th element of Data[X1][X2][0]
 	// used to send a USB packet form the buffer to the USB periph

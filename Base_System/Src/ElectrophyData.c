@@ -21,6 +21,7 @@ static ElectrophyData_DAC ElectrophyDataDAC;
 
 Output_device_t  Output_device; // Set which output device we use (DAC or USB)
 
+volatile uint8_t * NRFptr;
 // *************************************************************************
 // *************************************************************************
 // 										Function definitions	
@@ -34,6 +35,8 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 {
 	uint16_t i,j,k;
 	Output_device = Output_dev;
+	
+	NRFptr = ElectrophyDataNRF.Data[1];
 	
 	//**********************************
 	// Initialization of the NRF buffer
@@ -255,22 +258,22 @@ void ElectrophyData_Process(void)
 	if (ElectrophyData_Checkfill_NRF())
 	{
 		DEBUG_HIGH;
-		FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
+		
+		if (COMPRESS)
+		{	
+			if(Output_device == Usb)
+				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
+			else
+				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
+		}
+		else
+		{
+			if(Output_device == Usb)
+				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
+			else
+				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
+		}
 		DEBUG_LOW;
-//		if (COMPRESS)
-//		{	
-//			if(Output_device == Usb)
-//				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
-//			else
-//				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
-//		}
-//		else
-//		{
-//			if(Output_device == Usb)
-//				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
-//			else
-//				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
-//		}
 	}
 }
 

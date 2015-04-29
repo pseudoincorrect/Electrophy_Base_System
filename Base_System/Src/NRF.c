@@ -12,7 +12,7 @@ static void DmaInit(const NRF_Conf * nrf);
 static void CeDigitalWrite(const NRF_Conf * nrf, uint8_t state);
 static void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state);
 static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
-static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
+static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length);
 static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void RegisterInit(const NRF_Conf * nrf);
@@ -198,8 +198,8 @@ static void DmaInit(const NRF_Conf * nrf)
   hdma_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
   hdma_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
   hdma_rx.Init.MemInc              = DMA_MINC_ENABLE;
-  hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-  hdma_rx.Init.MemDataAlignment    = DMA_PDATAALIGN_HALFWORD;
+  hdma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_rx.Init.MemDataAlignment    = DMA_PDATAALIGN_BYTE;
   hdma_rx.Init.Mode                = DMA_NORMAL;
   hdma_rx.Init.Priority            = DMA_PRIORITY_HIGH;
   hdma_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;         
@@ -210,12 +210,12 @@ static void DmaInit(const NRF_Conf * nrf)
 	HAL_DMA_Init(&hdma_rx);
 
 	// DMA SPI TX
-	nrf->DMA_TX_INSTANCE->NDTR = BYTES_PER_FRAME; 
+	nrf->DMA_TX_INSTANCE->NDTR = BYTES_PER_FRAME - 1; 
 	nrf->DMA_TX_INSTANCE->M0AR = (uint32_t) nrf->TX_BUFFER; 					// src
 	nrf->DMA_TX_INSTANCE->PAR  = (uint32_t) &(nrf->SPI_INSTANCE->DR); // dest
 	
 	// DMA SPI RX
-	nrf->DMA_RX_INSTANCE->NDTR = BYTES_PER_FRAME;
+	nrf->DMA_RX_INSTANCE->NDTR = BYTES_PER_FRAME - 1;
 	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) nrf->RX_BUFFER;					  // dest
 	nrf->DMA_RX_INSTANCE->PAR  = (uint32_t) &(nrf->SPI_INSTANCE->DR); // src
 	   
@@ -265,28 +265,32 @@ void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 }		
 
 static uint8_t Receive = R_RX_PAYLOAD;
+static uint8_t Dummy 	 = 0x00;
+uint8_t * WritePtr;
 // **************************************************************
 //					ExtiHandler
 // **************************************************************
 void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 {
+	WritePtr = ElectrophyData_Write_NRF();
   //Get the adresse in the buffer where to send the datas
 	//load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) ElectrophyData_Write_NRF();
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) (WritePtr+1);
 	
 	SpiSend(nrfBackup, &flushRxFifo, 1);
 	SpiSend(nrfBackup, ClearIrqFlag, sizeof(ClearIrqFlag) );
 	
 	// Send read command to the NRF before read through the DMA and keep CSN low
 	SpiSendThenDma(nrf, &Receive, 1 );		
+	*WritePtr = SpiSendThenDma(nrf, &Dummy, 	1 );	
 	
 	// Clear Dma interrupt
 	nrf->DMA->LIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX);
 	nrf->DMA->HIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX);
 
 	//Enable DMAs, then SPI_DMA, which will start the transfert 
+	nrf->DMA_TX_INSTANCE->CR |= DMA_SxCR_EN; 
 	nrf->DMA_RX_INSTANCE->CR |= DMA_SxCR_EN;  
-	nrf->DMA_TX_INSTANCE->CR |= DMA_SxCR_EN;  
 	nrf->SPI_INSTANCE->CR2 	 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
 }
 
@@ -331,7 +335,7 @@ static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 // **************************************************************
 //					SpiSendThenDma 
 // **************************************************************
-static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
+static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 {
 	SPI_TypeDef * spi =  nrf->SPI_INSTANCE;
 	
@@ -344,6 +348,7 @@ static void SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 		while( !(spi->SR & SPI_FLAG_RXNE) ); // wait until receive complete
 		while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
 	}
+	return spi->DR;
 }
 
 // **************************************************************
