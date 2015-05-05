@@ -20,7 +20,7 @@ static void ChooseOutput(Output_device_t  Output_device);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static Output_device_t Output_device = Dac;
+static Output_device_t Output_device = Usb;
 GPIO_InitTypeDef GPIO_InitStruct;
 // *************************************************************************
 // *************************************************************************
@@ -44,6 +44,7 @@ int main(void)
   GPIO_InitStruct.Pin = GPIO_PIN_15;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 	
+
 	while (1)
   {
 		ElectrophyData_Process();

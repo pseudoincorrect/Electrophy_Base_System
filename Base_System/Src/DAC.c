@@ -46,7 +46,7 @@ void DAC_Init(void)
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
-	TIM2Init(230, 20); // (399,20) =  20 kHz sample	
+	TIM2Init(250, 20); // (230,20) =  20 kHz sample	
 }
 
 // **************************************************************

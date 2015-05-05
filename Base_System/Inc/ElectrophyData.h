@@ -40,23 +40,23 @@ typedef struct
 	// index of the X2th element of Data[X2][0][0]
 	// used to write a NRF packet to the buffer
 	uint16_t	WriteIndexUsb;
-	uint16_t	PreviousWriteIndexUsb; // Data[X2(t-1)][0][0]
+	//uint16_t	PreviousWriteIndexUsb; // Data[X2(t-1)][0][0]
 	
 	// index of the Y2th element of Data[X2][Y2][0]
 	// used to write a NRF packet to the buffer
 	uint16_t	WriteIndexNrf;
-	uint16_t	PreviousWriteIndexNrf; // Data[X2(t-1)][Y2(t-1)][0]
+	//uint16_t	PreviousWriteIndexNrf; // Data[X2(t-1)][Y2(t-1)][0]
 	
 	// index of the X3th element of Data[X3][0][0]
 	// used to mask the channel number in a NRF packet
-	uint16_t  MaskIndexUsb;
+	//uint16_t  MaskIndexUsb;
 	
 	// index of the Y3th element of Data[X3][Y3][0]
 	// used to mask the channel number in a NRF packet
-	uint16_t  MaskIndexNrf;
+	//	uint16_t  MaskIndexNrf;
 	
 	// enable the masking the Data[X3][Y3][0] Nref packet
-	volatile uint8_t   MaskEnable;
+	///volatile uint8_t   MaskEnable;
 }ElectrophyData_USB;
 
 
@@ -65,7 +65,7 @@ typedef struct
 {
 	// Cuffer of SIZE_BUFFER of NRF_DAC_NRF NRF frames
 	// each Nrf frame contain DAC_FRAME Dac frame 
-	uint16_t Data[SIZE_BUFFER_DAC + 1][DAC_FRAME][CHANNEL_NUMBER]; 
+	uint16_t Data[SIZE_BUFFER_DAC + 1][DAC_FRAME][CHANNEL_SIZE]; 
 		
 	// index of the X2th element of Data[X1][X2][0]
 	// used to send a USB packet form the buffer to the USB periph
@@ -101,7 +101,7 @@ uint16_t ElectrophyData_Checkfill_DAC(void);
 uint16_t * ElectrophyData_Read_DAC(void);
 
 //process function to decompress datas to output buffer (USB or DAC)
-void ElectrophyData_Process(void);
+uint8_t  ElectrophyData_Process(void);
 	
 #endif
 
