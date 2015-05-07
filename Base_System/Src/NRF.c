@@ -266,23 +266,23 @@ void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 
 static uint8_t Receive = R_RX_PAYLOAD;
 static uint8_t Dummy 	 = 0x00;
-uint8_t * WritePtr;
+uint8_t * NrfWritePtr;
 // **************************************************************
 //					ExtiHandler
 // **************************************************************
 void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 {
-	WritePtr = ElectrophyData_Write_NRF();
+	NrfWritePtr = ElectrophyData_Write_NRF();
   //Get the adresse in the buffer where to send the datas
 	//load the destination adress in the DMA controler for the next transfert
-	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) (WritePtr+1);
+	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) (NrfWritePtr+1);
 	
 	SpiSend(nrfBackup, &flushRxFifo, 1);
 	SpiSend(nrfBackup, ClearIrqFlag, sizeof(ClearIrqFlag) );
 	
 	// Send read command to the NRF before read through the DMA and keep CSN low
 	SpiSendThenDma(nrf, &Receive, 1 );		
-	*WritePtr = SpiSendThenDma(nrf, &Dummy, 	1 );	
+	*NrfWritePtr = SpiSendThenDma(nrf, &Dummy, 	1 );	
 	
 	// Clear Dma interrupt
 	nrf->DMA->LIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX);

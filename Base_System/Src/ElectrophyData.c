@@ -85,6 +85,8 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	ElectrophyDataDAC.ReadIndexDac  = 0;
 	ElectrophyDataDAC.ReadIndexNrf  = 0;
 	ElectrophyDataDAC.WriteIndexNrf = 0;
+	
+	FBAR_Initialize();
 }
 
 // *************************************************************************
@@ -155,16 +157,6 @@ uint16_t ElectrophyData_Checkfill_USB(void)
 // **************************************************************
 static uint16_t * ElectrophyData_Write_USB(void)
 {
-	// MaskIndexNrf and MaskIndexBsb will countain the index of the
-	// last writen Nrf Buffer to apply the mask of the channel number 
-//	ElectrophyDataUSB.MaskIndexNrf = ElectrophyDataUSB.PreviousWriteIndexNrf;
-//	ElectrophyDataUSB.MaskIndexUsb = ElectrophyDataUSB.PreviousWriteIndexUsb;
-//	ElectrophyDataUSB.MaskEnable 	 = 1;
-	
-	// We keep the index datas of the buffer to be written to return it
-	//ElectrophyDataUSB.PreviousWriteIndexUsb = ElectrophyDataUSB.WriteIndexUsb;
-	//ElectrophyDataUSB.PreviousWriteIndexNrf = ElectrophyDataUSB.WriteIndexNrf;
-	
 	// We increment the buffer indexes fo the nex Nrf write
 	ElectrophyDataUSB.WriteIndexNrf++;
 	if ( ElectrophyDataUSB.WriteIndexNrf >= USB_FRAME)
@@ -262,22 +254,40 @@ uint8_t ElectrophyData_Process(void)
 {
 	if (ElectrophyData_Checkfill_NRF())
 	{
+		static uint8_t *  FbarReadPtr;
+		static uint16_t * FbarWritePtr;
+		
 		DEBUG_HIGH;
 		
 		if (COMPRESS)
 		{	
-			if(Output_device == Usb)
-				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
-			else
-				FBAR_Process(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
+			FbarReadPtr = ElectrophyData_Read_NRF();
+			
+			//if cutvalues reinitialisation balise
+			if (*FbarReadPtr == 0xFF && *(FbarReadPtr + 1) == 0xFF )
+			{
+				FBAR_Reinitialize((FbarReadPtr + 2));
+			}
+			
+			// if no reinitialisation
+			else 
+			{
+				if(Output_device == Usb)
+					FbarWritePtr = ElectrophyData_Write_USB();
+				else 
+					FbarWritePtr = ElectrophyData_Write_DAC();
+				
+				FBAR_Uncompress(FbarReadPtr, FbarWritePtr);
+			}			
 		}
-		else
+		else // !(COMPRESS)
 		{
 			if(Output_device == Usb)
 				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_USB());
 			else
 				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
 		}
+		
 		DEBUG_LOW;
 	}
 	return ElectrophyData_Checkfill_NRF();

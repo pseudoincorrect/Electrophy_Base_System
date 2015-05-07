@@ -455,7 +455,7 @@ static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 	
 	
 		
-	USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)ElectrophyData_Read_USB()), 256); //256
+	USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)ElectrophyData_Read_USB()), 262); //256
 	//while (ElectrophyData_Process() ) {;}
 	
 	//else
