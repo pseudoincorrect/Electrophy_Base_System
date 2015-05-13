@@ -600,7 +600,7 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h)(0x54775F97)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x546B6A9C)
-F (..\..\Src\main.c)(0x5547493B)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\main.o" --omf_browse ".\embedded_base configuration\main.crf" --depend ".\embedded_base configuration\main.d")
+F (..\..\Src\main.c)(0x5550CC51)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\main.o" --omf_browse ".\embedded_base configuration\main.crf" --depend ".\embedded_base configuration\main.d")
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal.h)(0x546B6A9C)
 I (..\..\Inc\stm32f4xx_hal_conf.h)(0x551AB48A)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_rcc.h)(0x546B6A9C)
@@ -638,11 +638,11 @@ I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\string.h)(0x53468094)
 I (..\..\Inc\NRF.h)(0x5540D37C)
 I (..\..\Inc\nRF24L01.h)(0x5435241B)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
-I (..\..\Inc\DAC.h)(0x553A0673)
+I (..\..\Inc\DAC.h)(0x55521AD4)
 F (..\..\Src\stm32f4xx_it.c)(0x54736A2C)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\stm32f4xx_it.o" --omf_browse ".\embedded_base configuration\stm32f4xx_it.crf" --depend ".\embedded_base configuration\stm32f4xx_it.d")
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal.h)(0x546B6A9C)
 I (..\..\Inc\stm32f4xx_hal_conf.h)(0x551AB48A)
@@ -704,8 +704,8 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h)(0x54775F97)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x546B6A9C)
-F (..\..\Src\DAC.c)(0x55420237)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\dac.o" --omf_browse ".\embedded_base configuration\dac.crf" --depend ".\embedded_base configuration\dac.d")
-I (..\..\Inc\DAC.h)(0x553A0673)
+F (..\..\Src\DAC.c)(0x55521AD4)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\dac.o" --omf_browse ".\embedded_base configuration\dac.crf" --depend ".\embedded_base configuration\dac.d")
+I (..\..\Inc\DAC.h)(0x55521AD4)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdint.h)(0x53468094)
 I (..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h)(0x546B6A99)
 I (..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f411xe.h)(0x546B6A99)
@@ -735,13 +735,13 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h)(0x54775F97)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x546B6A9C)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
-F (..\..\Src\ElectrophyData.c)(0x554B5D59)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\electrophydata.o" --omf_browse ".\embedded_base configuration\electrophydata.crf" --depend ".\embedded_base configuration\electrophydata.d")
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
+F (..\..\Src\ElectrophyData.c)(0x5551CB2C)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\electrophydata.o" --omf_browse ".\embedded_base configuration\electrophydata.crf" --depend ".\embedded_base configuration\electrophydata.d")
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdint.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h)(0x546B6A99)
@@ -772,7 +772,7 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h)(0x54775F97)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x546B6A9C)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
 F (..\..\Src\NRF.c)(0x554B2FC2)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\nrf.o" --omf_browse ".\embedded_base configuration\nrf.crf" --depend ".\embedded_base configuration\nrf.d")
@@ -807,9 +807,9 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_tim_ex.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd.h)(0x546B6A9C)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_ll_usb.h)(0x54775F97)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x546B6A9C)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
 F (..\..\Src\usb_device.c)(0x552D3711)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usb_device.o" --omf_browse ".\embedded_base configuration\usb_device.crf" --depend ".\embedded_base configuration\usb_device.d")
@@ -854,8 +854,8 @@ I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6
 I (..\..\Inc\usbd_desc.h)(0x54736A2B)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc\usbd_audio.h)(0x551AB3AF)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (..\..\Inc\usbd_audio_if.h)(0x54736A2C)
 F (..\..\Src\usbd_audio_if.c)(0x54818DB6)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_audio_if.o" --omf_browse ".\embedded_base configuration\usbd_audio_if.crf" --depend ".\embedded_base configuration\usbd_audio_if.d")
@@ -899,8 +899,8 @@ I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\string.h)(0x53468094)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h)(0x546B6A9F)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6A9F)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 F (..\..\Src\usbd_conf.c)(0x552E63DA)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_conf.o" --omf_browse ".\embedded_base configuration\usbd_conf.crf" --depend ".\embedded_base configuration\usbd_conf.d")
 I (..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h)(0x546B6A99)
@@ -979,11 +979,11 @@ I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_def.h)(0x54775F97
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h)(0x546B6A9F)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6A9F)
 I (..\..\Inc\usbd_desc.h)(0x54736A2B)
-F (..\..\Src\FBAR.c)(0x554B5DB0)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\fbar.o" --omf_browse ".\embedded_base configuration\fbar.crf" --depend ".\embedded_base configuration\fbar.d")
+F (..\..\Src\FBAR.c)(0x5550B6B0)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\fbar.o" --omf_browse ".\embedded_base configuration\fbar.crf" --depend ".\embedded_base configuration\fbar.d")
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdint.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 F (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_core.c)(0x552E63DA)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_core.o" --omf_browse ".\embedded_base configuration\usbd_core.crf" --depend ".\embedded_base configuration\usbd_core.d")
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h)(0x546B6A9F)
 I (..\..\Inc\usbd_conf.h)(0x551052DE)
@@ -1098,7 +1098,7 @@ I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\string.h)(0x53468094)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h)(0x546B6A9F)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6A9F)
-F (..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src\usbd_audio.c)(0x5548D3FC)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_audio.o" --omf_browse ".\embedded_base configuration\usbd_audio.crf" --depend ".\embedded_base configuration\usbd_audio.d")
+F (..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src\usbd_audio.c)(0x5551C15A)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_audio.o" --omf_browse ".\embedded_base configuration\usbd_audio.crf" --depend ".\embedded_base configuration\usbd_audio.d")
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc\usbd_audio.h)(0x551AB3AF)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\math.h)(0x53468094)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ioreq.h)(0x546B6A9F)
@@ -1138,8 +1138,8 @@ I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\string.h)(0x53468094)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h)(0x546B6A9F)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6A9F)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)
 I (..\..\Inc\usbd_desc.h)(0x54736A2B)
 F (..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src\usbd_audio_if_template.c)(0x546B6A9F)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O3 -Otime --apcs=interwork --split_sections -I..\..\Inc -I..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I..\..\Drivers\CMSIS\Include -I..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Src -I..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc -I..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Inc --C99-I "C:\Program Files (x86)\Keil\ARM\RV31\INC"-I "C:\Program Files (x86)\Keil\ARM\PACK\ARM\CMSIS\4.1.1\CMSIS\Include"-DSTM32F411xE -DUSE_HAL_DRIVER -DSTM32F411xE-o ".\embedded_base configuration\usbd_audio_if_template.o" --omf_browse ".\embedded_base configuration\usbd_audio_if_template.crf" --depend ".\embedded_base configuration\usbd_audio_if_template.d")
@@ -1183,6 +1183,6 @@ I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\stdlib.h)(0x53468094)
 I (C:\Program Files (x86)\Keil\ARM\ARMCC\include\string.h)(0x53468094)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_core.h)(0x546B6A9F)
 I (..\..\Middlewares\ST\STM32_USB_Device_Library\Core\Inc\usbd_ctlreq.h)(0x546B6A9F)
-I (..\..\Inc\ElectrophyData.h)(0x554B5D59)
-I (..\..\Inc\CommonInclude.h)(0x554B408B)
+I (..\..\Inc\ElectrophyData.h)(0x5551C630)
+I (..\..\Inc\CommonInclude.h)(0x5551C142)
 I (..\..\Inc\FBAR.h)(0x554B2F76)

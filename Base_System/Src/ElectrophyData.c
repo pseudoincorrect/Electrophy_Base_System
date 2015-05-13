@@ -22,7 +22,8 @@ static ElectrophyData_DAC ElectrophyDataDAC;
 Output_device_t  Output_device; // Set which output device we use (DAC or USB)
 
 volatile uint8_t * NRFptr;
-volatile uint16_t * USBptr, * DACptr;
+volatile uint16_t * USBptr;
+volatile uint16_t * DACptr;
 // *************************************************************************
 // *************************************************************************
 // 										Function definitions	
@@ -69,12 +70,7 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	ElectrophyDataUSB.ReadIndexUsb  = 0;
 	ElectrophyDataUSB.WriteIndexNrf = 0;
 	ElectrophyDataUSB.WriteIndexUsb = 0;
-//	ElectrophyDataUSB.MaskIndexNrf  = 0;
-//	ElectrophyDataUSB.MaskIndexUsb  = 0;
-//	ElectrophyDataUSB.MaskEnable    = 0;
-//	ElectrophyDataUSB.PreviousWriteIndexNrf = 0;
-//	ElectrophyDataUSB.PreviousWriteIndexUsb = 0;
-	
+
 	//**********************************	
 	// Initialization of the DAC buffer
 	for(i=0; i<SIZE_BUFFER_DAC; i++) 

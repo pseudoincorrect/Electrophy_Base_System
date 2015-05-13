@@ -20,7 +20,7 @@ static void ChooseOutput(Output_device_t  Output_device);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static Output_device_t Output_device = Usb;
+static Output_device_t Output_device = Dac;
 GPIO_InitTypeDef GPIO_InitStruct;
 // *************************************************************************
 // *************************************************************************

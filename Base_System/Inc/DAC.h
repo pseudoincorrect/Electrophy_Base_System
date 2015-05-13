@@ -13,6 +13,7 @@
 #include "ElectrophyData.h"
 #include "CommonInclude.h"
 
+#define UPDATE_ALL  32
 
 typedef struct{
 	//SPI port/pin config
@@ -44,7 +45,7 @@ typedef struct{
 // Set the csn pin state
 //static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state);
 // Transmit data with SPI1 
-//static void SpiSend(const DAC_Conf * dac, uint8_t * data, uint8_t length);
+//static void SpiSend(const DAC_Conf * dac, uint32_t * data);
 // Function used to set the register of the DAC 
 //static void RegisterInit(const DAC_Conf * dac);
 // Initialize the timer used to send regularely datas to the DAC

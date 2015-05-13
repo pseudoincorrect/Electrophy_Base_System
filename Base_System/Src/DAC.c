@@ -9,7 +9,7 @@ static void GPIODeInit(const DAC_Conf * dac);
 static void GPIOInit(const DAC_Conf * dac);
 static void SpiInit(const DAC_Conf * dac);
 static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state);
-static void SpiSend(const DAC_Conf * dac, uint16_t * data);
+static void SpiSend(const DAC_Conf * dac, uint32_t * data);
 static void RegisterInit(const DAC_Conf * dac);
 static void TIM2Init(uint32_t reloadValue, uint16_t prescalerValue);
 static void SPI_IRQ_Handler(const DAC_Conf * dac);
@@ -21,8 +21,11 @@ static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static uint16_t DAC_Channel[CHANNEL_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
-static uint16_t DAC_Empty[CHANNEL_SIZE] 	= {0, 0, 0, 0, 0, 0, 0, 0};
+//static uint16_t DAC_Channel[CHANNEL_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
+
+static uint16_t DAC_ChannelCommand[CHANNEL_SIZE] = { 0, 1, 2, 3, 4, 5, 6, 7 + UPDATE_ALL};
+
+static uint32_t DAC_Empty[CHANNEL_SIZE] 	= {0, 0, 0, 0, 0, 0, 0, 0};
 
 //dac info handler
 const DAC_Conf dac1 = {	
@@ -46,7 +49,7 @@ void DAC_Init(void)
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
-	TIM2Init(250, 20); // (230,20) =  20 kHz sample	
+	TIM2Init(264, 20); // (230,20) =  20 kHz sample	
 }
 
 // **************************************************************
@@ -166,17 +169,21 @@ static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state)
 // **************************************************************
 //					SpiSend 
 // **************************************************************
-static void SpiSend(const DAC_Conf * dac, uint16_t * data)
+static void SpiSend(const DAC_Conf * dac, uint32_t * data)
 {
+  static uint8_t i;
+  
 	SPI_TypeDef * spi = dac->SPI_INSTANCE;
 	
 	CsnDigitalWrite(dac, LOW); //N_slave select low
+  
+  dac->SPI_INSTANCE->DR = *data >> 16;  // write data to be transmitted to the SPI data register
+  
+  while( !(spi->SR & SPI_FLAG_TXE)  ); 	// wait until transmit complete
+   
+  dac->SPI_INSTANCE->DR = *data & 0xFFFF; 
 	
-	spi->DR = *data; 						 // write data to be transmitted to the SPI data register
-
-	while( !(spi->SR & SPI_FLAG_TXE)  ); 	// wait until transmit complete
-	while( !(spi->SR & SPI_FLAG_RXNE) ); // wait until receive complete
-	while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
+  while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
 	
 	CsnDigitalWrite(dac, HIGH);
 }
@@ -187,12 +194,11 @@ static void SpiSend(const DAC_Conf * dac, uint16_t * data)
 static void RegisterInit(const DAC_Conf * dac)
 {
 	// disable auto acknowledgement
-	static uint16_t CTRL0 = 0x0006; //0b00110;
-	static uint16_t CTRL1 = 0x000F; //0b00001111;
-
+	static uint32_t POWER_REF = 0x00000000 | (1<<27) | (1<<24) | (1<<19) | (1<<17);  // ref always powered On
+    
 	// sending of the instructions to the DAC
-	SpiSend(dac,	&CTRL0);
-	SpiSend(dac,	&CTRL1);
+	SpiSend(dac, &POWER_REF);
+  
 }
 
 /**************************************************************/
@@ -227,8 +233,8 @@ static void DAC_Refresh(const DAC_Conf * dac)
 }
 
 static uint8_t dataCnt;
-static uint16_t dataSpi;
-static uint16_t * ptrChannel;
+static uint32_t dataSpi;
+static uint16_t * ptrChannelCommand;
 static uint16_t * bufferSample;
 /**************************************************************/
 //	 				DAC_SendSample
@@ -238,7 +244,7 @@ static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer)
 	//get the pointer to the data to send
 	bufferSample = buffer;
 	//get the pointer to the channel number array
-	ptrChannel = DAC_Channel;
+	ptrChannelCommand = DAC_ChannelCommand;
 	//set the ammount of data to send
 	dataCnt = CHANNEL_SIZE;
 	// enable interrupt : the sampling is done in the interrupt handler
@@ -267,9 +273,13 @@ static void SPI_IRQ_Handler(const DAC_Conf * dac)
 		if (dataCnt)
 		{	
 			CsnDigitalWrite(dac, HIGH); 
-			dataSpi = (*ptrChannel++ << 8) + (*bufferSample++ << 0) ; // (<< 12) : channel number,  (<< 2) channel value 
+			dataSpi = (*ptrChannelCommand++ << 20) + (*bufferSample++ << 4) ;
 			CsnDigitalWrite(dac, LOW); 
-			dac->SPI_INSTANCE->DR = dataSpi;
+			
+      dac->SPI_INSTANCE->DR = dataSpi >> 16;
+      while( !(dac->SPI_INSTANCE->SR & SPI_FLAG_TXE)  ); 	// wait until transmit complete
+      dac->SPI_INSTANCE->DR = dataSpi & 0x0000FFFF;
+      
 			dataCnt--;
 		}
 		else

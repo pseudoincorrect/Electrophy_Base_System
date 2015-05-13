@@ -93,22 +93,19 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 	// loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
-	{
-		
+	{                         		
 		// loop on all the CHANNEL_SIZE channels
 		#pragma unroll_completely 
 		for(j=0; j < CHANNEL_SIZE; j++)
 		{
 			winner = *bufferFrom++;
-
-			// rebuild the 16 bit value
-			if (!winner)
-					*bufferTo++ = (cutValue[j][0] - ETA) >> 1 ;
-			else if (winner == CUT_VAL_SIZE)
-				*bufferTo++ = (cutValue[j][CUT_VAL_SIZE-1] + ETA) >> 1;
-			else 
-				*bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) / 2) >> 1;
-			
+      
+      if (!winner)
+          *bufferTo++ = (( cutValue[j][0] - ((cutValue[j][1]-cutValue[j][0])/2) ) >> 1)  ;
+      else if (winner == CUT_VAL_SIZE)
+          *bufferTo++ = ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)) >> 1);
+      else
+          *bufferTo++ = (cutValue[j][winner] + cutValue[j][winner-1]) >> 2; 
 			// set the new the cut values
 			FBAR_AdaptCutValues(j, winner);
 		}

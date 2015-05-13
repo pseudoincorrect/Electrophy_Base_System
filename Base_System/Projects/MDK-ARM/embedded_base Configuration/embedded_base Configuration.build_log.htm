@@ -8,44 +8,77 @@ Project File Date:  04/28/2015
 
 <h2>Output:</h2>
 Build target 'embedded_base Configuration'
-compiling FBAR.c...
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-..\..\Src\FBAR.c: 8 warnings, 0 errors
+compiling main.c...
+compiling DAC.c...
+..\..\Src\DAC.c(174): warning:  #177-D: variable "i" was declared but never referenced
+    static uint8_t i;
+..\..\Src\DAC.c: 1 warning, 0 errors
 linking...
-Program Size: Code=20576 RO-data=636 RW-data=408 ZI-data=107232  
-".\embedded_base Configuration\embedded_base Configuration.axf" - 0 Error(s), 8 Warning(s).
-..
-compiling usbd_audio_if_template.c...
-linking...
-Program Size: Code=20580 RO-data=636 RW-data=408 ZI-data=107232  
-".\embedded_base Configuration\embedded_base Configuration.axf" - 0 Error(s), 8 Warning(s).
+Program Size: Code=21556 RO-data=636 RW-data=412 ZI-data=88052  
+".\embedded_base Configuration\embedded_base Configuration.axf" - 0 Error(s), 1 Warning(s).
+</pre>
+</body>
+</html>
+gramming Done.
+Verify OK.
+\max\\Documents\\GitHub\\Electrophysiology\\Electrophy_Base_System\\Base_System\\Projects\\MDK-ARM\\embedded_base Configuration\\embedded_base Configuration.axf" 
+Erase Done.
+Programming Done.
+Verify OK.
 Load "C:\\Users\\max\\Documents\\GitHub\\Electrophysiology\\Electrophy_Base_System\\Base_System\\Projects\\MDK-ARM\\embedded_base Configuration\\embedded_base Configuration.axf" 
 Erase Done.
 Programming Done.
 Verify OK.
-(s).
-Target not created
-ments\\GitHub\\Electrophysiology\\Electrophy_Base_System\\Base_System\\Projects\\MDK-ARM\\embedded_base Configuration\\embedded_base Configuration.axf" 
-Erase Done.
-Programming Done.
-Verify OK.
-rning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-FBAR.c: Warning:  #175-D: subscript out of range
-..\..\Src\FBAR.c: 9 warnings, 0 errors
-compiling usbd_core.c...
-compiling usbd_ctlreq.c...
-compiling usbd_ioreq.c...
+ usbd_audio_if.c...
 compiling usbd_audio.c...
 compiling usbd_audio_if_template.c...
+".\embedded_base Configuration\embedded_base Configuration.axf" - 2 Error(s), 2 Warning(s).
+Target not created
+
+..\..\Middlewares\ST\STM32_USB_Device_Library\Class\AUDIO\Src\usbd_audio.c: 1 warning, 0 errors
+compiling usbd_audio_if_template.c...
 linking...
-Program Size: Code=19720 RO-data=636 RW-data=400 ZI-data=107232  
-".\embedded_base Configuration\embedded_base Configuration.axf" - 0 Error(s), 9 Warning(s).
+Program Size: Code=21608 RO-data=636 RW-data=428 ZI-data=94500  
+".\embedded_base Configuration\embedded_base Configuration.axf" - 0 Error(s), 10 Warning(s).
+base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching nrf.o(.bss).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching nrf.o(.bss).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching dac.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_audio.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching nrf.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching nrf.o(.bss).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching nrf.o(.bss).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching electrophydata.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_audio_if.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_desc.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_desc.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching system_stm32f4xx.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching main.o(.bss).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching stm32f4xx_hal.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_audio_if.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching mvars.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching mvars.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching fbar.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching main.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_ctlreq.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6407E: Sections of aggregate size 0xa38 bytes could not fit into .ANY selector(s).
+Not enough information to list image symbols.
+Not enough information to list the image map.
+Finished: 2 information, 0 warning and 28 error messages.
+".\embedded_base Configuration\embedded_base Configuration.axf" - 28 Error(s), 1 Warning(s).
+Target not created
+ion\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching main.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_ctlreq.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6407E: Sections of aggregate size 0xa24 bytes could not fit into .ANY selector(s).
+Not enough information to list image symbols.
+Not enough information to list the image map.
+Finished: 2 information, 0 warning and 28 error messages.
+".\embedded_base Configuration\embedded_base Configuration.axf" - 28 Error(s), 9 Warning(s).
+Target not created
+ace in execution regions with .ANY selector matching main.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6406E: No space in execution regions with .ANY selector matching usbd_ctlreq.o(.data).
+.\embedded_base Configuration\embedded_base Configuration.axf: Error: L6407E: Sections of aggregate size 0x26c84 bytes could not fit into .ANY selector(s).
+Not enough information to list image symbols.
+Not enough information to list the image map.
+Finished: 2 information, 0 warning and 32 error messages.
+".\embedded_base Configuration\embedded_base Configuration.axf" - 32 Error(s), 9 Warning(s).
+Target not created

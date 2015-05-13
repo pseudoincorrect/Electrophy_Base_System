@@ -19,7 +19,7 @@
 
 #define	SIZE_BUFFER_NRF	 		200
 #define	SIZE_BUFFER_USB	 		200
-#define	SIZE_BUFFER_DAC	 		400
+#define	SIZE_BUFFER_DAC	 		100
 
 #define USB_FRAME	 	 		4 
 #define DAC_FRAME	    	4
@@ -28,8 +28,8 @@
 #define NBIT 				 	 3								 // resolution of the compression
 #define POW_2_NBIT  	(1 << NBIT) 			// 2^NBIT
 #define CUT_VAL_SIZE 	(POW_2_NBIT - 1) // number of cut value
-#define ETA					 	 1500						// adaptation parameter
-#define	RANGE					 1000
+#define ETA					 	3000						// adaptation parameter
+#define	RANGE					1000
 //#define	DELTA 				(RANGE/ (CUT_VAL_SIZE + 1))
 
 #define DEBUG_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_15)

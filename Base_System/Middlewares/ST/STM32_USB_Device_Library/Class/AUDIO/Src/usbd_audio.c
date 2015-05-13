@@ -451,18 +451,16 @@ uint16_t fill;
   */
 static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {		
-	//DEBUG_HIGH; DEBUG_LOW; DEBUG_HIGH; DEBUG_LOW;
-	
-	
-		
-	USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)ElectrophyData_Read_USB()), 262); //256
-	//while (ElectrophyData_Process() ) {;}
-	
-	//else
-		//USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) Empty, 256); 	
-
-	//DEBUG_HIGH; DEBUG_LOW; DEBUG_HIGH; DEBUG_LOW; 
-	
+	if (ElectrophyData_Checkfill_NRF())
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+  else
+  { 
+    while(!ElectrophyData_Checkfill_NRF())
+    {
+      ElectrophyData_Process();	
+    }
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+  }
 	return USBD_OK;
 }
 
