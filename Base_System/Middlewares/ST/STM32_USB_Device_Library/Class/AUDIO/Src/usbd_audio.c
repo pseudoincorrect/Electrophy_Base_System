@@ -84,8 +84,6 @@
 #define SIZE_TEST 176
 static uint16_t TestTrame[SIZE_TEST] = {0};
 
-static uint16_t Empty[300] = {0};
-
 static uint8_t  USBD_AUDIO_Init 			(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t  USBD_AUDIO_DeInit 		(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t  USBD_AUDIO_Setup 			(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
@@ -436,6 +434,7 @@ static uint8_t  *USBD_AUDIO_GetCfgDesc (uint16_t *length)
   return USBD_AUDIO_CfgDesc;
 }
 
+//static uint16_t Empty[300] = {0};
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
 /*************************************            DATA IN           ****************************************************/
@@ -452,22 +451,16 @@ uint16_t fill;
   */
 static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {		
-	//while (AudioBuffer_Checkfill() <= 0){;}
-	if (AudioBuffer_Checkfill())
-	{	
-		AudioBuffer_RefreshTest();	
-		USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)AudioBuffer_TestUsb()), 256); 	
-		AudioBuffer_ReadUsb();
-		//USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)AudioBuffer_ReadUsb()), 256); //256
-	}
-	else
-		USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)Empty), 256);
-	/*
-		AudioBuffer_RefreshTest();	
-	USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*) ((uint8_t*)AudioBuffer_TestUsb()), 256); 	
-	AudioBuffer_ReadUsb();
-	*/
-	
+	if (ElectrophyData_Checkfill_NRF())
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+  else
+  { 
+    while(!ElectrophyData_Checkfill_NRF())
+    {
+      ElectrophyData_Process();	
+    }
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+  }
 	return USBD_OK;
 }
 

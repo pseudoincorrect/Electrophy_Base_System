@@ -32,7 +32,7 @@
 
 #include 	<math.h>
 #include  "usbd_ioreq.h"
-#include  "AudioBuffer.h"
+#include  "ElectrophyData.h"
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
