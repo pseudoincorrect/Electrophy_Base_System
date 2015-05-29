@@ -81,8 +81,9 @@
                                          
 #define SIZE_FRAME_USB 176
 
-#define SIZE_TEST 176
-static uint16_t TestTrame[SIZE_TEST] = {0};
+#define SIZE_TEST 128
+static uint16_t TestTrame1[SIZE_TEST] = {0};
+//static uint16_t TestTrame2[SIZE_TEST] = {0};
 
 static uint8_t  USBD_AUDIO_Init 			(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
 static uint8_t  USBD_AUDIO_DeInit 		(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -305,22 +306,12 @@ static uint8_t  USBD_AUDIO_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx)
    		
 		for(i=0; i < SIZE_TEST; i++)
 		{
-			switch (i%8)
-			{	
-				case 0  : { TestTrame[i] = 0x1000 + i * 100; break; }
-				case 1  : { TestTrame[i] = 0x2000 + i * 100; break; }
-				case 2  : { TestTrame[i] = 0x3000 + i * 100; break; }
-				case 3  : { TestTrame[i] = 0x4000 + i * 100; break; }
-				case 4  : { TestTrame[i] = 0x5000 + i * 100; break; }
-				case 5  : { TestTrame[i] = 0x6000 + i * 100; break; }
-				case 6  : { TestTrame[i] = 0x7000 + i * 100; break; }
-				case 7  : { TestTrame[i] = 0x8000 + i * 100; break; }
-				default :	{ break; }		
-			 }
-	  }
+      TestTrame1[i] = i * 100;
+      //TestTrame2[i] = (SIZE_TEST-1) * 100 - 100 * i;
+		}
 		
     /* Prepare In endpoint to transmit 1st packet */ 
-    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)TestTrame, 176*2);      
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)TestTrame1, 176*2);      
   }
   return USBD_OK;
 }
@@ -440,8 +431,8 @@ static uint8_t  *USBD_AUDIO_GetCfgDesc (uint16_t *length)
 /*************************************            DATA IN           ****************************************************/
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
-
-uint16_t fill;
+extern ElectrophyData_USB ElectrophyDataUSB;
+//uint16_t * readPt;
 /**
   * @brief  USBD_AUDIO_DataIn
   *         handle data IN Stage
@@ -451,18 +442,23 @@ uint16_t fill;
   */
 static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {		
-	if (ElectrophyData_Checkfill_NRF())
-    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+  
+	if (ElectrophyData_Checkfill_USB())
+  { 
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)ElectrophyData_Read_USB(), 256);
+  }
   else
   { 
-    while(!ElectrophyData_Checkfill_NRF())
-    {
+    while(!ElectrophyData_Checkfill_USB() && !ElectrophyData_Checkfill_NRF())
+    {  
       ElectrophyData_Process();	
-    }
-    USBD_LL_Transmit(pdev, AUDIO_IN_EP, ((uint8_t*)ElectrophyData_Read_USB()), 256); //256 //262
+    }  
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)ElectrophyData_Read_USB(), 256);
   }
+  
 	return USBD_OK;
-}
+}                                                                         
+	// a buffer of SIZE_BUFFER usb frames 
 
 /**
   * @brief  USBD_AUDIO_EP0_RxReady

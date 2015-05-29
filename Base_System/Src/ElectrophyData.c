@@ -21,7 +21,8 @@ static ElectrophyData_DAC ElectrophyDataDAC;
 
 Output_device_t  Output_device; // Set which output device we use (DAC or USB)
 
-volatile uint8_t * NRFptr;
+// debug ptr to the beginning of each buffer
+volatile uint8_t  * NRFptr;
 volatile uint16_t * USBptr;
 volatile uint16_t * DACptr;
 // *************************************************************************
@@ -38,7 +39,6 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	uint16_t i,j,k;
 	Output_device = Output_dev;
 	
-	
 	NRFptr = ElectrophyDataNRF.Data[0];
 	USBptr = ElectrophyDataUSB.Data[0][0];
 	DACptr = ElectrophyDataDAC.Data[0][0];
@@ -46,7 +46,7 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	//**********************************
 	// Initialization of the NRF buffer
 	for(i=0; i<SIZE_BUFFER_NRF; i++) 
-		for(j=2; j< BYTES_PER_FRAME; j++) 
+		for(j=0; j< BYTES_PER_FRAME; j++) 
 			ElectrophyDataNRF.Data[i][j] = 0x0000;	
 	
 	ElectrophyDataNRF.ReadIndex  = 0;
@@ -54,9 +54,9 @@ void ElectrophyData_Init(Output_device_t  Output_dev)
 	
 	//**********************************
 	// Initialization of the USB buffer
-	for(i=0; i<SIZE_BUFFER_USB; i++) 
-		for(j=2; j<(1 + USB_FRAME); j++)   
-			for(k=2; k<(1 + BYTES_PER_FRAME); k++)
+	for(i=0; i < SIZE_BUFFER_USB; i++) 
+		for(j=0; j< USB_FRAME; j++)   
+			for(k=0; k < BYTES_PER_FRAME; k++)
 				ElectrophyDataUSB.Data[i][j][k] = 0x0000;
 	
 	for(i=0, j=0; i<BYTES_PER_FRAME; i++)
@@ -173,7 +173,7 @@ static uint16_t * ElectrophyData_Write_USB(void)
 uint16_t * ElectrophyData_Read_USB(void)
 {
 	static uint16_t previousReadUsb;
-	previousReadUsb = ElectrophyDataUSB.ReadIndexUsb;
+	 previousReadUsb = ElectrophyDataUSB.ReadIndexUsb;
 	
 	ElectrophyDataUSB.ReadIndexUsb++;
 	
@@ -243,6 +243,7 @@ uint16_t * ElectrophyData_Read_DAC(void)
 // 									Data Process Functions
 // *************************************************************************
 
+static uint8_t processus;
 // **************************************************************
 //					ElectrophyData_Process
 // **************************************************************
@@ -252,9 +253,13 @@ uint8_t ElectrophyData_Process(void)
 	{
 		static uint8_t *  FbarReadPtr;
 		static uint16_t * FbarWritePtr;
-		
-		DEBUG_HIGH;
-		
+        
+    processus++;
+    if (processus > 1)
+    {
+      DEBUG1_HIGH;
+      DEBUG1_LOW;
+    } 
 		if (COMPRESS)
 		{	
 			FbarReadPtr = ElectrophyData_Read_NRF();
@@ -283,9 +288,9 @@ uint8_t ElectrophyData_Process(void)
 			else
 				FBAR_Assemble(ElectrophyData_Read_NRF(), ElectrophyData_Write_DAC());
 		}
-		
-		DEBUG_LOW;
+    processus = 0;
 	}
+
 	return ElectrophyData_Checkfill_NRF();
 }
 

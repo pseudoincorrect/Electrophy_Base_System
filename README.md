@@ -13,21 +13,22 @@ The purpose of this system is to log the the electrical activity of a rat's neur
 ### THis repository contain the code files necessary program the *interfacing board* between the embedded system on the rodent and a PC/Oscilloscope (see above)
 
 
-### Features (*Embedded Part*)
+### Features (Embedded Part)
 
-1. Omnetics adapter
-2. Transmit 4 channels of 16 bits at 20 kHz 
-3. Or 8 channels compressed (16 bits after decompression) at 20 kHz
-4. Consume 18 mA at 3.7 V at full transmission load
-5. Weight 7 grams 
-6. Volume : 2cm *2cm * 2cm 
+*. Omnetics adapter
+*. Transmit 4 channels of 16 bits at 20 kHz 
+*. Or 8 channels compressed (16 bits after decompression) at 20 kHz
+*. Consume 18 mA at 3.7 V at full transmission load
+*. Weight 7 grams 
+*. Volume : 2cm *2cm * 2cm 
 
 
-### Features (*Interface Part*)
+### Features (Interface Part)
 
-1. USB audio protocol interface to display and log on PC
-2. 8 channels DAC to connect to an acquisition card
-3. USB as power supply
+*. USB audio protocol interface to display and log on PC
+*. 8 channels DAC to connect to an acquisition card
+*. USB as power supply
+
 
 #### [This file]( https://github.com/pseudoincorrect/Electrophy_Base_System/UserManual.txt)  contain the directions to program the Embedded system through Keil Uvision or directly by programming through the ST-link-V2 by STMicroelectronics
 

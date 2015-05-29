@@ -171,8 +171,6 @@ static void CsnDigitalWrite(const DAC_Conf * dac, uint8_t state)
 // **************************************************************
 static void SpiSend(const DAC_Conf * dac, uint32_t * data)
 {
-  static uint8_t i;
-  
 	SPI_TypeDef * spi = dac->SPI_INSTANCE;
 	
 	CsnDigitalWrite(dac, LOW); //N_slave select low

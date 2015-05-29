@@ -234,6 +234,10 @@ static void DmaInit(const NRF_Conf * nrf)
 	nrf->DMA->HIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX); 
 }
 
+
+//uint16_t fakeIndex, fakeData = 0;
+uint8_t * NrfWritePtr;
+
 static uint8_t flushRxFifo 				= FLUSH_RX;
 static uint8_t ClearIrqFlag[2] = {W_REGISTER | STATUS, 0x70};
 // *************************************************************
@@ -261,12 +265,32 @@ void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 	nrf->DMA->LIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX);
 	nrf->DMA->HIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX);
 	
+//   #pragma unroll_completely 
+//  for( fakeIndex = 0; fakeIndex < 32; fakeIndex+=8)
+//  {
+//     *(NrfWritePtr +  fakeIndex + 0) = fakeData >> 8;
+//     *(NrfWritePtr +  fakeIndex + 1) = fakeData &0x00FF;
+//    
+//     *(NrfWritePtr +  fakeIndex + 2) = fakeData >> 8;
+//     *(NrfWritePtr +  fakeIndex + 3) = fakeData &0x00FF;
+//    
+//     *(NrfWritePtr +  fakeIndex + 4) = fakeData >> 8;
+//     *(NrfWritePtr +  fakeIndex + 5) = fakeData &0x00FF;
+//    
+//     *(NrfWritePtr +  fakeIndex + 6) = fakeData >> 8;
+//     *(NrfWritePtr +  fakeIndex + 7) = fakeData &0x00FF;
+//    
+//     fakeData += 50;
+//     if( fakeData > 56000)
+//       fakeData = 0;
+//  }
+  
 	FLAG_PACKET = 0;
 }		
 
 static uint8_t Receive = R_RX_PAYLOAD;
 static uint8_t Dummy 	 = 0x00;
-uint8_t * NrfWritePtr;
+
 // **************************************************************
 //					ExtiHandler
 // **************************************************************
@@ -292,6 +316,8 @@ void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 	nrf->DMA_TX_INSTANCE->CR |= DMA_SxCR_EN; 
 	nrf->DMA_RX_INSTANCE->CR |= DMA_SxCR_EN;  
 	nrf->SPI_INSTANCE->CR2 	 |= (SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+
+  
 }
 
 // **************************************************************
