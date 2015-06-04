@@ -36,6 +36,8 @@
 #ifndef __STM32F4xx_IT_H
 #define __STM32F4xx_IT_H
 
+#include "stm32f4xx.h"
+
 #ifdef __cplusplus
  extern "C" {
 #endif 
@@ -46,10 +48,12 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
+   
 void OTG_FS_WKUP_IRQHandler(void);
 void SysTick_Handler(void);
 void OTG_FS_IRQHandler(void);
-
+uint32_t It_getTicks(void);
+   
 #ifdef __cplusplus
 }
 #endif

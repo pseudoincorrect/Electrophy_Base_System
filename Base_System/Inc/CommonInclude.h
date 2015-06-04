@@ -40,6 +40,27 @@
 #define DEBUG3_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_10)
 #define DEBUG3_LOW		(GPIOA->BSRRH |= GPIO_PIN_10)
 
+/**************************************************************/
+//					Enum
+/**************************************************************/
+typedef enum{
+  Dac, 
+  Usb
+
+} Output_device_t;
+
+
+typedef enum
+{
+	__8ch_16bit_20kHz__C__,
+	__8ch_8bit__20kHz_NC__,
+	__4ch_16bit_20kHz_NC__,
+	__8ch_16bit_10kHz_NC__,
+  __all__,
+  __none__
+
+} Board_StateTypeDef;
+
 #endif
 
 

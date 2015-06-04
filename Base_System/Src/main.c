@@ -4,6 +4,7 @@
 #include "NRF.h"
 #include "DAC.h"
 #include "ElectrophyData.h"
+#include "board_interface.h"
 #include "stm32f4xx_hal_gpio.h"
 
 // *************************************************************************
@@ -11,9 +12,9 @@
 // 						Private functions	
 // *************************************************************************
 // *************************************************************************
-static void SystemClock_Config(void);
 static void ClockInit(void);
 static void ChooseOutput(Output_device_t  Output_device);
+static void ChangeState(void);
 
 // *************************************************************************
 // *************************************************************************
@@ -21,7 +22,9 @@ static void ChooseOutput(Output_device_t  Output_device);
 // *************************************************************************
 // *************************************************************************
 static Output_device_t Output_device = Usb;
-GPIO_InitTypeDef GPIO_InitStruct;
+static Board_StateTypeDef BoardState = __8ch_16bit_20kHz__C__;
+static GPIO_InitTypeDef GPIO_InitStruct;
+
 // *************************************************************************
 // *************************************************************************
 // 								 MAIN
@@ -37,6 +40,7 @@ int main(void)
 	ChooseOutput(Output_device);
 	ElectrophyData_Init(Output_device);
 	NRF_Init();
+  Board_Init();
 	
 	//****************************************************** debug pin
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -46,7 +50,9 @@ int main(void)
  
 
 	while (1)
-  {
+  { 
+    if (Board_GetStatus())
+       ChangeState();
     ElectrophyData_Process();
 	}
 }
@@ -56,43 +62,6 @@ int main(void)
 // 						static function definition	
 // *************************************************************************
 // *************************************************************************
-// **************************************************************
-// 	 				SystemClock_Config 
-// **************************************************************
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-
-  __PWR_CLK_ENABLE();
-
-  /* The voltage scaling allows optimizing the power consumption when the device is 
-     clocked below the maximum system frequency, to update the voltage scaling value 
-     regarding system frequency refer to product datasheet.  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
-  
-  /* Enable HSE Oscillator and activate PLL with HSE as source */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 192;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-  HAL_RCC_OscConfig(&RCC_OscInitStruct);
- 
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 
-     clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;  
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;  
-  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2);
-
-}
-
 // **************************************************************
 // 	 				ClockInit 
 // **************************************************************
@@ -135,3 +104,20 @@ static void ChooseOutput(Output_device_t  Output_device)
 		MX_USB_DEVICE_Enable(LOW);
 	}
 }
+
+// **************************************************************
+// 	 				ChangeState 
+// **************************************************************
+static void ChangeState(void)
+{
+    if (Output_device != Board_GetOutput()) 
+      ChooseOutput(Board_GetOutput());
+
+}
+
+
+
+
+
+
+
