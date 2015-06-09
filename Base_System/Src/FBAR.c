@@ -148,22 +148,44 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 /**************************************************************/
 //					FBAR_Assemble
 /**************************************************************/
-void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo)
+void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef state)
 {
 	uint16_t i,j;
 	
-	#pragma unroll_completely 
-	for(i=0; i < NRF_CHANNEL_FRAME; i++)
-	{
-		#pragma unroll_completely 
-		for(j=0; j < (CHANNEL_SIZE/2); j++)
-		{
-			*bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
-			bufferTo++;
-			bufferFrom += 2;
-		}
-		bufferTo += 4;
-	}
+  switch (state)
+  {      
+    case __4ch_16bit_20kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < (CHANNEL_SIZE/2); j++)
+        {
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
+          bufferTo++;
+          bufferFrom += 2;
+        }
+        bufferTo += 4;
+      }
+      break;
+    
+    case __8ch_16bit_10kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME/2; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < (CHANNEL_SIZE); j++)
+        {
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
+          bufferTo++;
+          bufferFrom += 2;
+        }
+      }
+      break;
+    
+    default :
+      break;
+  }
 }
 
 

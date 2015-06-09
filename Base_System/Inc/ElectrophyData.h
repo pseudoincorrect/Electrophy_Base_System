@@ -67,7 +67,7 @@ typedef struct
 /**************************************************************/
 
 // Initialize the buffers and its pointers
-void ElectrophyData_Init(Output_device_t  Output_dev);
+void ElectrophyData_Init(void);
 
 // function called to manage the NRF buffer
 uint16_t ElectrophyData_Checkfill_NRF(void);
@@ -86,7 +86,10 @@ uint16_t * ElectrophyData_Read_DAC(void);
 
 //process function to decompress datas to output buffer (USB or DAC)
 uint8_t  ElectrophyData_Process(void);
-	
+
+// set the  
+void ElectrophyData_SetOutPut(Output_device_t  Output);
+void ElectrophyData_SetState(DataStateTypeDef state);
 #endif
 
 

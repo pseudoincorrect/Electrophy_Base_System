@@ -80,7 +80,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
 				
 		/* Set USBFS Interrupt */
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 3, 0);
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 3, 3);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
   }
 }

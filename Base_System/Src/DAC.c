@@ -21,6 +21,8 @@ static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
+static DataStateTypeDef DataState = FIRST_STATE;
+
 //static uint16_t DAC_Channel[CHANNEL_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static uint16_t DAC_ChannelCommand[CHANNEL_SIZE] = { 0, 1, 2, 3, 4, 5, 6, 7 + UPDATE_ALL};
@@ -45,7 +47,6 @@ const DAC_Conf dac1 = {
 // **************************************************************
 void DAC_Init(void) 
 {	
-	GPIODeInit(&dac1);
 	GPIOInit(&dac1);		
 	SpiInit(&dac1);						
 	RegisterInit(&dac1); 
@@ -82,6 +83,8 @@ static void GPIOInit(const DAC_Conf * dac)
 	//init structures for the config
   GPIO_InitTypeDef GPIO_InitStructure;
 	
+  GPIODeInit(dac);
+  
 	// configure pins used by SPI : SCK, MISO, MOSI	
 	GPIO_InitStructure.Mode 		 = GPIO_MODE_AF_PP;
 	GPIO_InitStructure.Speed 		 = GPIO_SPEED_FAST ;
@@ -289,8 +292,24 @@ static void SPI_IRQ_Handler(const DAC_Conf * dac)
 	dac->SPI_INSTANCE->SR &=  ~(SPI_IT_TXE); // clear flag won't trigger directly an other interrupt
 }
 
-
-
+/**************************************************************/
+//					DAC_SetNewState
+/**************************************************************/
+void DAC_SetNewState(DataStateTypeDef State)
+{
+  DataState = State;
+  
+  if (DataState == __8ch_16bit_10kHz_NC__)
+  {
+    TIM2Init(264, 40);  //set the dac refreshing rate at 10 kHz
+    DAC_Enable(HIGH);
+  }
+  else 
+  {
+    TIM2Init(264, 20);  //set the dac refreshing rate at 20 kHz
+    DAC_Enable(HIGH);
+  }
+}
 
 
 

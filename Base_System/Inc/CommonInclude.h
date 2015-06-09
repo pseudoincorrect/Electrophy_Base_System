@@ -18,7 +18,7 @@
 #define BYTES_PER_FRAME	  32
 
 #define	SIZE_BUFFER_NRF	  100
-#define	SIZE_BUFFER_USB	  300
+#define	SIZE_BUFFER_USB	  200
 #define	SIZE_BUFFER_DAC	  100
 
 #define USB_FRAME	 	 		  4 
@@ -52,15 +52,15 @@ typedef enum{
 
 typedef enum
 {
-	__8ch_16bit_20kHz__C__,
-	__8ch_8bit__20kHz_NC__,
-	__4ch_16bit_20kHz_NC__,
-	__8ch_16bit_10kHz_NC__,
-  __all__,
-  __none__
+	__8ch_16bit_20kHz__C__ = 0x01,
+	__4ch_16bit_20kHz_NC__ = 0x02,
+	__8ch_16bit_10kHz_NC__ = 0x03,
+  __8ch_8bit__20kHz_NC__ = 0x04,
+  
+} DataStateTypeDef;
 
-} Board_StateTypeDef;
-
+#define FIRST_STATE	  __8ch_16bit_10kHz_NC__
+#define FIRST_OUTPUT  Usb
 #endif
 
 

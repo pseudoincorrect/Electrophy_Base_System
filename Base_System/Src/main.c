@@ -13,7 +13,7 @@
 // *************************************************************************
 // *************************************************************************
 static void ClockInit(void);
-static void ChooseOutput(Output_device_t  Output_device);
+static void SetOutput(Output_device_t  Output_device);
 static void ChangeState(void);
 
 // *************************************************************************
@@ -21,8 +21,8 @@ static void ChangeState(void);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static Output_device_t Output_device = Usb;
-static Board_StateTypeDef BoardState = __8ch_16bit_20kHz__C__;
+static Output_device_t Output_device = FIRST_OUTPUT;
+static DataStateTypeDef DataState = FIRST_STATE;
 static GPIO_InitTypeDef GPIO_InitStruct;
 
 // *************************************************************************
@@ -35,13 +35,20 @@ int main(void)
   HAL_Init();						// Reset of all peripherals, Initializes the Flash interface and the Systick
   SystemClock_Config(); // Configure the system clock
 	ClockInit(); 					// Initialize all configured peripherals clocks
-	DAC_Init();
-	MX_USB_DEVICE_Init();
-	ChooseOutput(Output_device);
-	ElectrophyData_Init(Output_device);
+	
+  DAC_Init();
+	MX_USB_DEVICE_Init();   
+	
 	NRF_Init();
   Board_Init();
+  
+//  DataState = Board_GetState();
+//	Output_device = Board_GetOutput();
+  SetOutput(Output_device);
+//  ElectrophyData_SetOutPut(Output_device);
 	
+  ElectrophyData_Init(); 
+  
 	//****************************************************** debug pin
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -51,8 +58,12 @@ int main(void)
 
 	while (1)
   { 
-    if (Board_GetStatus())
-       ChangeState();
+    if (Board_GetStateUpdate())
+    {
+      HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+      ChangeState();
+      HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    }  
     ElectrophyData_Process();
 	}
 }
@@ -89,9 +100,9 @@ static void ClockInit(void)
 }
 
 // **************************************************************
-// 	 				ChooseOutput 
+// 	 				SetOutput 
 // **************************************************************
-static void ChooseOutput(Output_device_t  Output_device)
+static void SetOutput(Output_device_t  Output_device)
 {
 	if (Output_device == Usb)
 	{
@@ -110,9 +121,19 @@ static void ChooseOutput(Output_device_t  Output_device)
 // **************************************************************
 static void ChangeState(void)
 {
-    if (Output_device != Board_GetOutput()) 
-      ChooseOutput(Board_GetOutput());
-
+    if(Output_device != Board_GetOutput()) 
+    {
+      Output_device = Board_GetOutput();
+      SetOutput(Output_device);
+      ElectrophyData_SetOutPut(Output_device);
+    }
+    if(DataState != Board_GetState())
+    {
+      DataState = Board_GetState();
+      ElectrophyData_SetState(DataState);
+      NRF_SetNewState(DataState);
+      DAC_SetNewState(DataState);  
+    }
 }
 
 

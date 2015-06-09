@@ -69,7 +69,7 @@ void DAC_Enable(uint8_t state);
 // handler for Timer and Spi interrupts
 void TIM2_IRQHandler(void);
 void SPI3_IRQHandler(void);
-
+void DAC_SetNewState(DataStateTypeDef State);
 #endif
 
 

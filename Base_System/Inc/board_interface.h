@@ -15,6 +15,8 @@
 #include "CommonInclude.h"
 #include "stm32f4xx_it.h"
 
+#define  ALL_LEDS 0xFF
+#define  NO_LED   0xFE
 // Configure the clock for the periphérald
 void SystemClock_Config(void);
 
@@ -36,15 +38,15 @@ static void EstLed(uint8_t state);
 // Control the South/bottom led 
 static void SouthLed(uint8_t state);
 	
-static void Board_Leds(Board_StateTypeDef state);
+static void Board_Leds(uint8_t  state);
 
 static void LedsBlink(void);
 
-uint8_t Board_GetStatus(void);
+uint8_t Board_GetStateUpdate(void);
 
-uint8_t Board_GetStatus(void);
+uint8_t Board_GetStateUpdate(void);
 
-Board_StateTypeDef Board_GetState(void);
+DataStateTypeDef Board_GetState(void);
 
 Output_device_t Board_GetOutput(void);
 

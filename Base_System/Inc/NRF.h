@@ -91,7 +91,7 @@ void DMA1_Stream3_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 // test the nrf (ask for the adress pipe 2
 void NRF_Test(const NRF_Conf * nrf);
-
+void NRF_SetNewState(DataStateTypeDef DataState);
 #endif
 
 

@@ -1,7 +1,7 @@
 #include "board_interface.h"
 
-static Board_StateTypeDef BoardState;
-static Output_device_t Output_device;
+static DataStateTypeDef DataState = FIRST_STATE;
+static Output_device_t Output_device = FIRST_OUTPUT;
 static uint8_t FlagUpdate = 0;
 
 // **************************************************************
@@ -47,7 +47,7 @@ void SystemClock_Config(void)
 void Board_Init(void)
 {
 	GpioInit();
-	Board_Leds(__8ch_16bit_20kHz__C__);
+	Board_Leds(DataState);
 }
 
 /**************************************************************/
@@ -77,29 +77,31 @@ static void GpioInit(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
 }
 
 
 uint8_t changeOutput = 0, indexState = 0;
-Board_StateTypeDef stateSystem[4] = {	__8ch_16bit_20kHz__C__, __8ch_8bit__20kHz_NC__,
-                                      __4ch_16bit_20kHz_NC__,	__8ch_16bit_10kHz_NC__};
+DataStateTypeDef stateSystem[3] = {	__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__ ,
+                                    __8ch_16bit_10kHz_NC__}; // __8ch_8bit__20kHz_NC__};
 /**************************************************************/
 //					EXTI0_IRQHandler
 /**************************************************************/
 void EXTI0_IRQHandler(void)
 {
   static uint32_t ticksIn;
-  static int32_t timeDelta;
   
 	if (EXTI->PR & EXTI_PR_PR0)
 	{
-    ticksIn = It_getTicks();
     
+    DEBUG2_HIGH;
+    
+    ticksIn = It_getTicks();   
+    while(It_getTicks() - ticksIn < 250){;} 
+    
+    ticksIn = It_getTicks();  
     while((GPIOA->IDR & GPIO_PIN_0))
     {
-      timeDelta = It_getTicks() - ticksIn;
-      if (timeDelta > 1000)
+     if (It_getTicks() - ticksIn > 850)
       {
         changeOutput = 1;
         break;
@@ -108,9 +110,9 @@ void EXTI0_IRQHandler(void)
     
     if (!changeOutput)
     {
-      indexState = (indexState >= 3) ? 0 : indexState+1;
-      Board_Leds(stateSystem[indexState]);   
-      BoardState = stateSystem[indexState];     
+      indexState = (indexState >= 2) ? 0 : indexState+1;
+      Board_Leds((uint8_t) stateSystem[indexState]);   
+      DataState = stateSystem[indexState];     
 	  }
     else
     {
@@ -122,8 +124,14 @@ void EXTI0_IRQHandler(void)
     }
     changeOutput = 0;
     FlagUpdate = 1;
+    
+    while((GPIOA->IDR & GPIO_PIN_0))
+    {;}
   }
-	EXTI->PR = EXTI_PR_PR0;
+  
+  DEBUG2_LOW;
+	
+  EXTI->PR = EXTI_PR_PR0;
 }
 
 /**************************************************************/
@@ -165,46 +173,48 @@ static void SouthLed(uint8_t state)
 /**************************************************************/
 //					Board_Leds
 /**************************************************************/
-static void Board_Leds(Board_StateTypeDef state)
+static void Board_Leds(uint8_t  state)
 {
 	switch(state)
 	{
-		case __8ch_16bit_20kHz__C__ :
+		case ((uint8_t) __8ch_16bit_20kHz__C__) :
 			WestLed(LOW);
 			NorthLed(HIGH);
       EstLed(LOW);
       SouthLed(LOW);
 			break;
-		case __8ch_8bit__20kHz_NC__ :
+		case ((uint8_t) __4ch_16bit_20kHz_NC__) :
 			WestLed(LOW);
 			NorthLed(LOW);
       EstLed(HIGH);
       SouthLed(LOW);
 			break;
-		case __4ch_16bit_20kHz_NC__ :
+		case ((uint8_t) __8ch_16bit_10kHz_NC__) :
 			WestLed(LOW);
 			NorthLed(LOW);
       EstLed(LOW);
       SouthLed(HIGH);
 			break;
-		case __8ch_16bit_10kHz_NC__ :
+		case ((uint8_t) __8ch_8bit__20kHz_NC__ ) :
       WestLed(HIGH);
 			NorthLed(LOW);
       EstLed(LOW);
       SouthLed(LOW);
 			break;
-    case __all__ :
-      WestLed(HIGH);
-			NorthLed(HIGH);
-      EstLed(HIGH);
-      SouthLed(HIGH);
-			break;
-    case __none__ :
+    case NO_LED :
       WestLed(LOW);
 			NorthLed(LOW);
       EstLed(LOW);
       SouthLed(LOW);
 			break;
+    case ALL_LEDS :
+      WestLed(HIGH);
+			NorthLed(HIGH);
+      EstLed(HIGH);
+      SouthLed(HIGH);
+			break;
+    default :
+      break;
 	}		
 }
 
@@ -216,27 +226,27 @@ static void LedsBlink(void)
   static uint8_t i;
   static uint32_t ticksIn;
   
-  Board_Leds(__all__);
+  Board_Leds(ALL_LEDS);
   
   for(i = 0; i < 4; i++)
   {
      ticksIn = It_getTicks();
-     Board_Leds(__all__);
+     Board_Leds(ALL_LEDS);
      while (( It_getTicks() - ticksIn) < 100)
      {;}
        
      ticksIn = It_getTicks();
-     Board_Leds(__none__);
+     Board_Leds(NO_LED);
      while ((It_getTicks() - ticksIn) < 200)
      {;}  
   }
-  Board_Leds(stateSystem[BoardState]); 
+  Board_Leds((uint8_t) DataState); 
 }  
 
 /**************************************************************/
-//					Board_GetStatus
+//					Board_GetStateUpdate
 /**************************************************************/
-uint8_t Board_GetStatus(void)
+uint8_t Board_GetStateUpdate(void)
 {
   if (FlagUpdate)
   {
@@ -250,9 +260,9 @@ uint8_t Board_GetStatus(void)
 /**************************************************************/
 //					Board_GetState
 /**************************************************************/
-Board_StateTypeDef Board_GetState(void)
+DataStateTypeDef Board_GetState(void)
 {
-  return BoardState;
+  return DataState;
 }
 
 /**************************************************************/
