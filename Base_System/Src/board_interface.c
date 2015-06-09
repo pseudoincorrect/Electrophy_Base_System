@@ -81,8 +81,8 @@ static void GpioInit(void)
 
 
 uint8_t changeOutput = 0, indexState = 0;
-DataStateTypeDef stateSystem[3] = {	__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__ ,
-                                    __8ch_16bit_10kHz_NC__}; // __8ch_8bit__20kHz_NC__};
+DataStateTypeDef stateSystem[4] = {	__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__ ,
+                                    __8ch_16bit_10kHz_NC__, __8ch_8bit__20kHz_NC__};
 /**************************************************************/
 //					EXTI0_IRQHandler
 /**************************************************************/

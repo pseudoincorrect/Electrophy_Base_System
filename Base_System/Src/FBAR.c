@@ -174,7 +174,7 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
       for(i=0; i < NRF_CHANNEL_FRAME/2; i++)
       {
         #pragma unroll_completely 
-        for(j=0; j < (CHANNEL_SIZE); j++)
+        for(j=0; j < CHANNEL_SIZE; j++)
         {
           *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
           bufferTo++;
@@ -183,6 +183,20 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
       }
       break;
     
+    case __8ch_8bit__20kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < CHANNEL_SIZE; j++)
+        {
+          *bufferTo = (*bufferFrom) << 7 ;
+          bufferTo++;
+          bufferFrom++;
+        }
+      }
+      break;
+      
     default :
       break;
   }

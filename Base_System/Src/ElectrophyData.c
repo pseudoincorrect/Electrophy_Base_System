@@ -247,7 +247,7 @@ uint8_t ElectrophyData_Process(void)
 {
 	if (ElectrophyData_Checkfill_NRF())
 	{
-		uint8_t *  FbarReadPtr, * Assemble8Ptr1, * Assemble8Ptr2;
+		uint8_t *  FbarReadPtr, * Assemble8Ptr;
 		uint16_t * FbarWritePtr,* Assemble16Ptr;
        
 		if (ElectrophyData_State == __8ch_16bit_20kHz__C__)  // if compress
@@ -256,45 +256,35 @@ uint8_t ElectrophyData_Process(void)
 			
 			//if cutvalues reinitialisation balise
 			if (*FbarReadPtr == 0xFF && *(FbarReadPtr + 1) == 0xFF )
-			{
-				FBAR_Reinitialize((FbarReadPtr + 2));
-			}		
+        FBAR_Reinitialize((FbarReadPtr + 2));		
 			// if no reinitialisation
 			else 
 			{
 				if(ElectrophyData_Output == Usb)
-				{
           FbarWritePtr = ElectrophyData_Write_USB();
-				}
-        else 
-				{	
-          FbarWritePtr = ElectrophyData_Write_DAC();
-				}
+				else 
+					FbarWritePtr = ElectrophyData_Write_DAC();
+				
 				FBAR_Uncompress(FbarReadPtr, FbarWritePtr);
 			}			
 		}
 		else // !(Compress)
 		{
-      Assemble8Ptr1 = ElectrophyData_Read_NRF();
-      if (ElectrophyData_State == __8ch_16bit_10kHz_NC__)
-         Assemble8Ptr2 = ElectrophyData_Read_NRF();
-      
+      Assemble8Ptr = ElectrophyData_Read_NRF();
+              
       if(ElectrophyData_Output == Usb)
-      {
         Assemble16Ptr = ElectrophyData_Write_USB();
-				FBAR_Assemble(Assemble8Ptr1, Assemble16Ptr, ElectrophyData_State);
-			}
-      else
-      {
+			else
         Assemble16Ptr = ElectrophyData_Write_DAC();
-        FBAR_Assemble(Assemble8Ptr1, Assemble16Ptr, ElectrophyData_State);     
-      }
       
+      FBAR_Assemble(Assemble8Ptr, Assemble16Ptr, ElectrophyData_State);     
+           
       if (ElectrophyData_State == __8ch_16bit_10kHz_NC__)
       {
-       // while(!ElectrophyData_Checkfill_NRF()) {;}
+        Assemble8Ptr = ElectrophyData_Read_NRF();
         Assemble16Ptr += (NRF_CHANNEL_FRAME/2) * CHANNEL_SIZE;
-        FBAR_Assemble(Assemble8Ptr2, Assemble16Ptr, ElectrophyData_State);     
+        
+        FBAR_Assemble(Assemble8Ptr, Assemble16Ptr, ElectrophyData_State);     
       }
     }
 	}

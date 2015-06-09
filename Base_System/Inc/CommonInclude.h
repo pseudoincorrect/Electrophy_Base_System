@@ -28,7 +28,7 @@
 #define NBIT 				 	    3								 // resolution of the compression
 #define POW_2_NBIT  	    (1 << NBIT) 			// 2^NBIT
 #define CUT_VAL_SIZE 	    (POW_2_NBIT - 1) // number of cut value
-#define ETA					 	    3000						// adaptation parameter
+#define ETA					 	    1500						// adaptation parameter
 #define	RANGE					    1000
 
 #define DEBUG1_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_15)
@@ -59,7 +59,7 @@ typedef enum
   
 } DataStateTypeDef;
 
-#define FIRST_STATE	  __8ch_16bit_10kHz_NC__
+#define FIRST_STATE	  __8ch_16bit_20kHz__C__
 #define FIRST_OUTPUT  Usb
 #endif
 
