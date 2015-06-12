@@ -363,29 +363,29 @@ static void RegisterInit(const NRF_Conf * nrf)
 {
 	//declaration of instruction to send to the NRF
 	// disable auto acknowledgement
-	static uint8_t disableAutoAck[2] 	= {W_REGISTER | EN_AA 		 , 0x00};
+	uint8_t disableAutoAck[2] 	= {W_REGISTER | EN_AA 		 , 0x00};
 	// set size payload 32 byte
-	static uint8_t rxPayloadSize[2] 	= {W_REGISTER | RX_PW_P0 	 , 32  };
+	uint8_t rxPayloadSize[2] 	= {W_REGISTER | RX_PW_P0 	 , 32  };
 	// set pipe enabled  0b 0000 0001 (pipe 0 enabled)
-	static uint8_t rxPipe[2] 					= {W_REGISTER | EN_RXADDR  , 0x01};
+	uint8_t rxPipe[2] 					= {W_REGISTER | EN_RXADDR  , 0x01};
 	// set size adresse RX 3 byte
-	static uint8_t rxTxAdressSize[2] 	= {W_REGISTER | SETUP_AW   , 0x01};
+	uint8_t rxTxAdressSize[2] 	= {W_REGISTER | SETUP_AW   , 0x01};
 	// set RX ADDR P0
-	static uint8_t rxAdressP0[6] 			= {W_REGISTER | RX_ADDR_P0 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
+	uint8_t rxAdressP0[6] 			= {W_REGISTER | RX_ADDR_P0 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 		// set RX ADDR P0
-	static uint8_t txAdress[6]  			= {W_REGISTER | TX_ADDR 	 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
+	uint8_t txAdress[6]  			= {W_REGISTER | TX_ADDR 	 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 	// set RF chanel 		 0b 0000 0010 (2400 MHz + 2 MHz) 
-	static uint8_t rfChanel[2] 				= {W_REGISTER | RF_CH 		 , 0x02};
+	uint8_t rfChanel[2] 				= {W_REGISTER | RF_CH 		 , 0x02};
 	// set RF parameters 0b 0000 1110 (2Mbps, 0dB)
-	static uint8_t rfParameter[2] 		= {W_REGISTER | RF_SETUP   , 0x0E};
+	uint8_t rfParameter[2] 		= {W_REGISTER | RF_SETUP   , 0x0E};
 	// set Receive mode  0b 0011 0011 
-	static uint8_t receiveMode[2] 		= {W_REGISTER | CONFIG		 , 0x33};
+	uint8_t receiveMode[2] 		= {W_REGISTER | CONFIG		 , 0x33};
 	// clear IRQ
-	static uint8_t clearIrq[2] 		  	= {W_REGISTER | STATUS		 , 0x70};
+	uint8_t clearIrq[2] 		  	= {W_REGISTER | STATUS		 , 0x60};
 	// flush Rx fifo
-	static uint8_t flushRxFifo 				= FLUSH_RX;
+	uint8_t flushRxFifo 				= FLUSH_RX;
 	// flush Tx fifo
-	static uint8_t flushTxFifo				= FLUSH_TX;
+	uint8_t flushTxFifo				= FLUSH_TX;
 	
 	CeDigitalWrite(nrf, LOW);
 	
@@ -407,20 +407,20 @@ static void RegisterInit(const NRF_Conf * nrf)
 
 static uint8_t DataTransmit[BYTES_PER_FRAME + 1] = {0};
 // **************************************************************
-// 					NRF_SetNewState
+// 					NRF_SendNewState
 // **************************************************************
-void NRF_SetNewState(DataStateTypeDef DataState)
+void NRF_SendNewState(DataStateTypeDef DataState)
 {  
   uint8_t i;
   
-  static uint8_t transmitMode[2] = {W_REGISTER | CONFIG, 0x52};
-  static uint8_t clearIrqFlag[2] = {W_REGISTER | STATUS, 0x70};
-  static uint8_t flushTxFifo		 	= FLUSH_TX;
+  uint8_t transmitMode[2] = {W_REGISTER | CONFIG, 0x52};
+  uint8_t clearIrqFlag[2] = {W_REGISTER | STATUS, 0x60};
+  uint8_t flushTxFifo		 	= FLUSH_TX;
   
-  DEBUG1_HIGH;
+  ExtiInterruptEnable(LOW);
   
-  HAL_NVIC_DisableIRQ(nrf1.IRQ_EXTI_LINE);
-  HAL_NVIC_DisableIRQ(nrf2.IRQ_EXTI_LINE);
+  while(FLAG_PACKET)
+  {;}
   
   DataTransmit[0] = W_TX_PAYLOAD;
   for(i=1; i < BYTES_PER_FRAME+1; i++)
@@ -445,18 +445,16 @@ void NRF_SetNewState(DataStateTypeDef DataState)
     CeDigitalWrite(&nrf1, HIGH);
     while ((HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == 1))
     {;}
-    CeDigitalWrite(&nrf1, LOW);  
+    CeDigitalWrite(&nrf1, LOW);    
     SpiSend(&nrf1,	clearIrqFlag, sizeof(clearIrqFlag));
+    SpiSend(&nrf1,	&flushTxFifo, 1);
     CeDigitalWrite(&nrf1, HIGH);
   }
    
   CeDigitalWrite(&nrf1, LOW);
   RegisterInit(&nrf1);
 
-  DEBUG1_LOW;  
-
-  HAL_NVIC_EnableIRQ(nrf1.IRQ_EXTI_LINE);
-  HAL_NVIC_EnableIRQ(nrf2.IRQ_EXTI_LINE);
+  ExtiInterruptEnable(HIGH);
 }
 
 // **************************************************************
@@ -464,7 +462,7 @@ void NRF_SetNewState(DataStateTypeDef DataState)
 // **************************************************************
 void NRF_Test(const NRF_Conf * nrf)
 {
-	static uint8_t rxAdressP0[4] = {R_REGISTER | RX_ADDR_P0, 0x00, 0x00, 0x00};
+	uint8_t rxAdressP0[4] = {R_REGISTER | RX_ADDR_P0, 0x00, 0x00, 0x00};
  	// Read RX ADDR P0
 	SpiSend(nrf, rxAdressP0, sizeof(rxAdressP0)); 
 	
@@ -531,8 +529,24 @@ void DMA2_Stream2_IRQHandler(void)
 	DmaHandler(&nrf1, &nrf2);	
 }		
 
-
-
+// *************************************************************
+// 	 				ExtiInterruptEnable 
+// *************************************************************
+void ExtiInterruptEnable(uint8_t state)
+{
+  if (state) 
+  {  
+    __HAL_GPIO_EXTI_CLEAR_IT((&nrf1)->PIN_IRQ); //clear exti interrupt
+    __HAL_GPIO_EXTI_CLEAR_IT((&nrf2)->PIN_IRQ); //clear exti interrupt
+    HAL_NVIC_EnableIRQ(nrf1.IRQ_EXTI_LINE);
+    HAL_NVIC_EnableIRQ(nrf2.IRQ_EXTI_LINE);
+  }
+  else
+  {
+    HAL_NVIC_DisableIRQ(nrf1.IRQ_EXTI_LINE);
+    HAL_NVIC_DisableIRQ(nrf2.IRQ_EXTI_LINE);
+  }
+}
 
 
 

@@ -59,13 +59,12 @@ void FBAR_Initialize(void)
 	}
 }
 
-
 /**************************************************************/
 //					FBAR_Reinitialize
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	uint16_t i,j, value, delta;
+	uint16_t i, j, value, delta;
 	
 	#pragma unroll_completely 
 	for(i=0; i < CHANNEL_SIZE; i++)
@@ -98,14 +97,15 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 		#pragma unroll_completely 
 		for(j=0; j < CHANNEL_SIZE; j++)
 		{
-			winner = *bufferFrom++;
+			winner = (*bufferFrom) & 0x07;
+      bufferFrom++;
       
       if (!winner)
-          *bufferTo++ = (( cutValue[j][0] - ((cutValue[j][1]-cutValue[j][0])/2) ) >> 1)  ;
+          *bufferTo++ = (( cutValue[j][0] - ((cutValue[j][1]-cutValue[j][0])/2) ) >> 1) & 0x7FFF;
       else if (winner == CUT_VAL_SIZE)
-          *bufferTo++ = ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)) >> 1);
+          *bufferTo++ = ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)) >> 1)  & 0x7FFF;
       else
-          *bufferTo++ = (cutValue[j][winner] + cutValue[j][winner-1]) >> 2; 
+          *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
 			// set the new the cut values
 			FBAR_AdaptCutValues(j, winner);
 		}
@@ -126,20 +126,20 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (!i)
 			{
-				if (cutValue[channel][0] >  ETA) 
+				if (cutValue[channel][0] >  ETA + SECU * 5) 
 					cutValue[channel][i] -= etaSous[i];	
 			}
-			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i])
+			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i] + SECU)
 				cutValue[channel][i] -= etaSous[i];	
 		}
 		else 
 		{
 			if (i == CUT_VAL_SIZE-1) 
 			{
-				if (cutValue[channel][CUT_VAL_SIZE-1] <  65500 - ETA) 
+				if (cutValue[channel][CUT_VAL_SIZE-1] <  65000 - ETA) 
 					cutValue[channel][i] += etaAdd[i];
 			}
-			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i])
+			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i] + SECU)
 				cutValue[channel][i] += etaAdd[i];
 		}
 	}
@@ -161,11 +161,16 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < (CHANNEL_SIZE/2); j++)
         {
-          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
           bufferTo++;
           bufferFrom += 2;
         }
-        bufferTo += 4;
+        #pragma unroll_completely 
+        for(j=0; j < (CHANNEL_SIZE/2); j++)
+        {
+          *bufferTo = 0;
+          bufferTo++;
+        }
       }
       break;
     
@@ -176,7 +181,7 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < CHANNEL_SIZE; j++)
         {
-          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
           bufferTo++;
           bufferFrom += 2;
         }
@@ -190,7 +195,7 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < CHANNEL_SIZE; j++)
         {
-          *bufferTo = (*bufferFrom) << 7 ;
+          *bufferTo = ((*bufferFrom) << 7) & 0x7FFF;
           bufferTo++;
           bufferFrom++;
         }

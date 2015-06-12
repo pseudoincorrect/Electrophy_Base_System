@@ -305,6 +305,7 @@ void ElectrophyData_SetOutPut(Output_device_t Output)
 void ElectrophyData_SetState(DataStateTypeDef State)
 {
   ElectrophyData_State = State;
+  ElectrophyData_Init();
 }
 
 

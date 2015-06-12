@@ -20,7 +20,7 @@ typedef struct
 	uint16_t	ReadIndex;
 	uint16_t	WriteIndex;
 	
-}ElectrophyData_NRF;
+}ElectrophyData_NRF;                          
 
 // handler of the buffer and its pointers for the USB buffer
 typedef struct

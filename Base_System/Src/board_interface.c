@@ -81,8 +81,8 @@ static void GpioInit(void)
 
 
 uint8_t changeOutput = 0, indexState = 0;
-DataStateTypeDef stateSystem[4] = {	__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__ ,
-                                    __8ch_16bit_10kHz_NC__, __8ch_8bit__20kHz_NC__};
+DataStateTypeDef stateSystem[4] = 
+{__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__, __8ch_16bit_10kHz_NC__, __8ch_8bit__20kHz_NC__};
 /**************************************************************/
 //					EXTI0_IRQHandler
 /**************************************************************/
@@ -92,8 +92,8 @@ void EXTI0_IRQHandler(void)
   
 	if (EXTI->PR & EXTI_PR_PR0)
 	{
-    
-    DEBUG2_HIGH;
+    // disable interrupt so it won't triger before the change of state in "main.c"
+    Board_ExtiInterruptEnable(LOW);
     
     ticksIn = It_getTicks();   
     while(It_getTicks() - ticksIn < 250){;} 
@@ -110,7 +110,7 @@ void EXTI0_IRQHandler(void)
     
     if (!changeOutput)
     {
-      indexState = (indexState >= 2) ? 0 : indexState+1;
+      indexState = (indexState >= 3) ? 0 : indexState+1;
       Board_Leds((uint8_t) stateSystem[indexState]);   
       DataState = stateSystem[indexState];     
 	  }
@@ -128,9 +128,6 @@ void EXTI0_IRQHandler(void)
     while((GPIOA->IDR & GPIO_PIN_0))
     {;}
   }
-  
-  DEBUG2_LOW;
-	
   EXTI->PR = EXTI_PR_PR0;
 }
 
@@ -271,6 +268,21 @@ DataStateTypeDef Board_GetState(void)
 Output_device_t Board_GetOutput(void)
 {
   return Output_device;
+}
+
+// *************************************************************
+// 	 				Board_ExtiInterruptEnable 
+// *************************************************************
+void Board_ExtiInterruptEnable(uint8_t state)
+{
+  if (state) 
+  {  
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+  }
+  else
+  {
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+  }
 }
 
 

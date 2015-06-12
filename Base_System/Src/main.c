@@ -41,11 +41,8 @@ int main(void)
 	
 	NRF_Init();
   Board_Init();
-  
-//  DataState = Board_GetState();
-//	Output_device = Board_GetOutput();
+
   SetOutput(Output_device);
-//  ElectrophyData_SetOutPut(Output_device);
 	
   ElectrophyData_Init(); 
   
@@ -60,9 +57,9 @@ int main(void)
   { 
     if (Board_GetStateUpdate())
     {
-      HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+      Board_ExtiInterruptEnable(LOW); // Disable push button interrupt
       ChangeState();
-      HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+      Board_ExtiInterruptEnable(HIGH);  // Ensable push button interrupt
     }  
     ElectrophyData_Process();
 	}
@@ -131,7 +128,7 @@ static void ChangeState(void)
     {
       DataState = Board_GetState();
       ElectrophyData_SetState(DataState);
-      NRF_SetNewState(DataState);
+      NRF_SendNewState(DataState);
       DAC_SetNewState(DataState);  
     }
 }

@@ -50,6 +50,8 @@ DataStateTypeDef Board_GetState(void);
 
 Output_device_t Board_GetOutput(void);
 
+void Board_ExtiInterruptEnable(uint8_t state);
+
 #endif
 
 
