@@ -25,6 +25,7 @@ static Output_device_t Output_device = FIRST_OUTPUT;
 static DataStateTypeDef DataState = FIRST_STATE;
 static GPIO_InitTypeDef GPIO_InitStruct;
 
+static volatile uint8_t EtaIndex = 0;
 // *************************************************************************
 // *************************************************************************
 // 								 MAIN
@@ -44,7 +45,7 @@ int main(void)
 
   SetOutput(Output_device);
 	
-  ElectrophyData_Init(); 
+  ElectrophyData_Init(ETA_INDEX_INIT); 
   
 	//****************************************************** debug pin
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -55,11 +56,11 @@ int main(void)
 
 	while (1)
   { 
-    if (Board_GetStateUpdate())
+    if (Board_GetUpdate())
     {
-      Board_ExtiInterruptEnable(LOW); // Disable push button interrupt
+      Board_InterruptEnable(LOW); // Disable push button interrupt
       ChangeState();
-      Board_ExtiInterruptEnable(HIGH);  // Ensable push button interrupt
+      Board_InterruptEnable(HIGH);  // Ensable push button interrupt
     }  
     ElectrophyData_Process();
 	}
@@ -75,7 +76,9 @@ int main(void)
 // **************************************************************
 static void ClockInit(void)
 {
-// GPIO Ports Clock Enable 
+    __PWR_CLK_ENABLE();
+  
+  // GPIO Ports Clock Enable 
   __GPIOH_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();	
 	__GPIOB_CLK_ENABLE();
@@ -92,7 +95,10 @@ static void ClockInit(void)
 	__DMA2_CLK_ENABLE();
 	
 	__TIM2_CLK_ENABLE();
-	
+	__TIM3_CLK_ENABLE();
+  
+  __ADC1_CLK_ENABLE();
+  
 	__USB_OTG_FS_CLK_ENABLE();
 }
 
@@ -118,19 +124,33 @@ static void SetOutput(Output_device_t  Output_device)
 // **************************************************************
 static void ChangeState(void)
 {
-    if(Output_device != Board_GetOutput()) 
+  //Change the Output : Usb or dac
+  if(Output_device != Board_GetOutput()) 
+  {
+    Output_device = Board_GetOutput();
+    SetOutput(Output_device);
+    ElectrophyData_SetOutPut(Output_device);
+  }
+  
+  //Change the DataState
+  if((DataState != Board_GetState()) || (EtaIndex != Board_GetEtaIndex())) 
+  {
+    DataState = Board_GetState();
+    EtaIndex = Board_GetEtaIndex();
+  
+    if (DataState == __8ch_16bit_20kHz__C__)
     {
-      Output_device = Board_GetOutput();
-      SetOutput(Output_device);
-      ElectrophyData_SetOutPut(Output_device);
+      NRF_SendNewState(EtaIndex + 100);
+      ElectrophyData_SetState(__8ch_16bit_20kHz__C__, EtaIndex);
+      DAC_SetNewState(__8ch_16bit_20kHz__C__);
     }
-    if(DataState != Board_GetState())
+    else
     {
-      DataState = Board_GetState();
-      ElectrophyData_SetState(DataState);
-      NRF_SendNewState(DataState);
-      DAC_SetNewState(DataState);  
+      NRF_SendNewState((uint8_t) DataState);
+      ElectrophyData_SetState(DataState, EtaIndex);
+      DAC_SetNewState(DataState);
     }
+  }
 }
 
 

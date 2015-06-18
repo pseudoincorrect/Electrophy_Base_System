@@ -326,12 +326,10 @@ static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 	for (indexSpi=0; indexSpi<length; indexSpi++) 
 	{
 		spi->DR = data[indexSpi]; 						 // write data to be transmitted to the SPI data register
-		while( !(spi->SR & SPI_FLAG_TXE)  ); 	// wait until transmit complete
-		while( !(spi->SR & SPI_FLAG_RXNE) ); // wait until receive complete		
+		while( !(spi->SR & SPI_FLAG_TXE)){;} 	// wait until transmit complete
+		while( !(spi->SR & SPI_FLAG_RXNE)){;} // wait until receive complete	      
 	}
-  
-  while( spi->SR & SPI_FLAG_BSY ); 		// wait until SPI is not busy anymore
-	
+  while( spi->SR & SPI_FLAG_BSY ){;} 		// wait until SPI is not busy anymore  
   CsnDigitalWrite(nrf, HIGH);
 }
 
@@ -401,7 +399,7 @@ static void RegisterInit(const NRF_Conf * nrf)
 	SpiSend(nrf,	&flushRxFifo, 	1											);
 	SpiSend(nrf,	&flushTxFifo, 	1											);
 	SpiSend(nrf,	receiveMode, 	  sizeof(receiveMode)	  );
-	SpiSend(nrf, clearIrq, 			sizeof(clearIrq) 			);
+	SpiSend(nrf,  clearIrq, 			sizeof(clearIrq) 			);
 	CeDigitalWrite(nrf, HIGH);
 }
 
@@ -409,7 +407,7 @@ static uint8_t DataTransmit[BYTES_PER_FRAME + 1] = {0};
 // **************************************************************
 // 					NRF_SendNewState
 // **************************************************************
-void NRF_SendNewState(DataStateTypeDef DataState)
+void NRF_SendNewState(uint8_t DataState)
 {  
   uint8_t i;
   
@@ -425,32 +423,32 @@ void NRF_SendNewState(DataStateTypeDef DataState)
   DataTransmit[0] = W_TX_PAYLOAD;
   for(i=1; i < BYTES_PER_FRAME+1; i++)
   {
-     DataTransmit[i] =  (uint8_t)  DataState;
+     DataTransmit[i] = ((uint8_t)  DataState) + i-1;
   }
  
-  while(TRANSFERT_FLAG)
-  {;}
+  while(TRANSFERT_FLAG) {;}
   
   CeDigitalWrite(&nrf1, LOW);
   
-  SpiSend(&nrf1,	transmitMode, sizeof(transmitMode));
+  SpiSend(&nrf1, transmitMode, sizeof(transmitMode));
  
-  SpiSend(&nrf1,	&flushTxFifo, 1);
+  SpiSend(&nrf1, &flushTxFifo, 1);
  
-  SpiSend(&nrf1,	clearIrqFlag, sizeof(clearIrqFlag));
+  SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
     
-  for(i=0; i < 20; i++)	
+  for(i=0; i < 50; i++)	
   {  
     SpiSend(&nrf1,	DataTransmit, sizeof(DataTransmit));
     CeDigitalWrite(&nrf1, HIGH);
-    while ((HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == 1))
-    {;}
+    
+    while ((HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == 1)) {;}
+    
     CeDigitalWrite(&nrf1, LOW);    
     SpiSend(&nrf1,	clearIrqFlag, sizeof(clearIrqFlag));
     SpiSend(&nrf1,	&flushTxFifo, 1);
     CeDigitalWrite(&nrf1, HIGH);
   }
-   
+  
   CeDigitalWrite(&nrf1, LOW);
   RegisterInit(&nrf1);
 

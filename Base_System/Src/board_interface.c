@@ -1,8 +1,10 @@
 #include "board_interface.h"
 
-static DataStateTypeDef DataState = FIRST_STATE;
-static Output_device_t Output_device = FIRST_OUTPUT;
-static uint8_t FlagUpdate = 0;
+static DataStateTypeDef   DataState = FIRST_STATE;
+static Output_device_t    Output_device = FIRST_OUTPUT;
+static uint8_t            FlagUpdate = 0;
+static ADC_HandleTypeDef  AdcHandle;
+static TIM_HandleTypeDef  TimHandle;
 
 // **************************************************************
 // 	 				SystemClock_Config 
@@ -11,8 +13,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
-
-  __PWR_CLK_ENABLE();
 
   /* The voltage scaling allows optimizing the power consumption when the device is 
      clocked below the maximum system frequency, to update the voltage scaling value 
@@ -47,7 +47,9 @@ void SystemClock_Config(void)
 void Board_Init(void)
 {
 	GpioInit();
+  AdcInit();
 	Board_Leds(DataState);
+  TIM3Init(500, 300);
 }
 
 /**************************************************************/
@@ -56,8 +58,8 @@ void Board_Init(void)
 static void GpioInit(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
-
-//****************************************************** Push button	
+  
+  //****************************************************** Push button	
 	 /* Configure PA.15 pin as input floating */
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -77,6 +79,69 @@ static void GpioInit(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  
+    /*##-2- Configure peripheral GPIO ##########################################*/ 
+  /* ADC3 Channel8 GPIO pin configuration */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  
+}
+
+// *************************************************************
+// 	 				AdcInit 
+// *************************************************************
+static void AdcInit(void)
+{  
+  ADC_ChannelConfTypeDef    sConfig;
+  
+/*##-1- Configure the ADC peripheral #######################################*/
+  AdcHandle.Instance = ADC1;
+  
+  AdcHandle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV2;
+  AdcHandle.Init.Resolution            = ADC_RESOLUTION8b;
+  AdcHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
+  AdcHandle.Init.EOCSelection          = EOC_SINGLE_CONV;
+  AdcHandle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
+  AdcHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;   /* Software start to trig the 1st conversion manually, without external event */
+  AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  AdcHandle.Init.DMAContinuousRequests = ENABLE;
+      
+  HAL_ADC_Init(&AdcHandle);
+
+  /*##-2- Configure ADC regular channel ######################################*/  
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.Offset = 0;
+  
+  HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
+}
+
+/**************************************************************/
+//					TIM3Init
+/**************************************************************/
+static void TIM3Init(uint32_t reloadValue, uint16_t prescalerValue)
+{	
+	TimHandle.Instance = TIM3;
+
+	TimHandle.Init.Period            = reloadValue;
+  TimHandle.Init.Prescaler         = prescalerValue;
+  TimHandle.Init.ClockDivision     = 0;
+  TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  TimHandle.Init.RepetitionCounter = 0;
+ 	HAL_TIM_Base_Init(&TimHandle);
+  
+	// Set the TIMx priority 
+	HAL_NVIC_SetPriority(TIM3_IRQn, 3, 0);	
+	// Enable the TIMx global Interrupt 
+  HAL_NVIC_EnableIRQ(TIM3_IRQn);
+	
+	__HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE); //The specified TIM3 interrupt : update
+  __HAL_TIM_ENABLE(&TimHandle);
 }
 
 
@@ -93,7 +158,7 @@ void EXTI0_IRQHandler(void)
 	if (EXTI->PR & EXTI_PR_PR0)
 	{
     // disable interrupt so it won't triger before the change of state in "main.c"
-    Board_ExtiInterruptEnable(LOW);
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
     
     ticksIn = It_getTicks();   
     while(It_getTicks() - ticksIn < 250){;} 
@@ -123,10 +188,18 @@ void EXTI0_IRQHandler(void)
         Output_device = Dac;
     }
     changeOutput = 0;
+    
+    if (DataState == __8ch_16bit_20kHz__C__)
+      HAL_NVIC_EnableIRQ(TIM3_IRQn);      // enable timer (adc potentiometer) interrupt
+    else
+		 HAL_NVIC_DisableIRQ(TIM3_IRQn);     // or disable it
+      
+        
     FlagUpdate = 1;
     
     while((GPIOA->IDR & GPIO_PIN_0))
-    {;}
+    {;} 
+      
   }
   EXTI->PR = EXTI_PR_PR0;
 }
@@ -241,9 +314,9 @@ static void LedsBlink(void)
 }  
 
 /**************************************************************/
-//					Board_GetStateUpdate
+//					Board_GetUpdate
 /**************************************************************/
-uint8_t Board_GetStateUpdate(void)
+uint8_t Board_GetUpdate(void)
 {
   if (FlagUpdate)
   {
@@ -273,17 +346,81 @@ Output_device_t Board_GetOutput(void)
 // *************************************************************
 // 	 				Board_ExtiInterruptEnable 
 // *************************************************************
-void Board_ExtiInterruptEnable(uint8_t state)
+void Board_InterruptEnable(uint8_t state)
 {
   if (state) 
   {  
+    HAL_NVIC_EnableIRQ(TIM3_IRQn);
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
   }
   else
-  {
+  {                               
+    HAL_NVIC_DisableIRQ(TIM3_IRQn);
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);
   }
 }
+
+static uint8_t toggle;
+volatile static uint32_t adcVal, AdcResult = 0;
+/**************************************************************/
+//					TIM3_IRQHandler
+/**************************************************************/
+void TIM3_IRQHandler(void)
+{
+  if(__HAL_TIM_GET_FLAG(&TimHandle, TIM_FLAG_UPDATE) != RESET)
+	{
+		if(__HAL_TIM_GET_ITSTATUS(&TimHandle, TIM_IT_UPDATE) !=RESET)
+		{
+      if (toggle)
+      {
+        HAL_ADC_Start(&AdcHandle);
+        toggle = 0;    
+      }
+      else
+      {       
+        /*##-5- Get the converted value of regular channel  ########################*/
+        adcVal =  HAL_ADC_GetValue(&AdcHandle);
+        if (adcVal - DELTA_ADC >  AdcResult || adcVal + DELTA_ADC <  AdcResult)
+        {
+          AdcResult =  adcVal;         
+          FlagUpdate = 1;
+        }
+        toggle = 1;
+      }
+      __HAL_TIM_CLEAR_IT(&TimHandle, TIM_IT_UPDATE); // Remove TIMx update interrupt flag 
+			__HAL_TIM_CLEAR_FLAG(&TimHandle, TIM_IT_UPDATE);
+		}	
+	}
+}  
+
+/**************************************************************/
+//					Board_GetEtaIndex
+/**************************************************************/
+uint8_t Board_GetEtaIndex(void)
+{ 
+  static uint16_t EtaIndex;
+  
+  EtaIndex = AdcResult;
+  if (EtaIndex > 188)
+    EtaIndex = 188;
+  
+  EtaIndex = EtaIndex * 100; 
+  
+  EtaIndex = EtaIndex / 188; 
+  
+  return (uint8_t) EtaIndex;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -12,9 +12,10 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-volatile uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE] = {0};
-volatile uint16_t etaAdd[CUT_VAL_SIZE]={0};
-volatile uint16_t etaSous[CUT_VAL_SIZE]={0};
+static uint16_t Eta;
+static uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE + 1] = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range line 145
+static uint16_t etaAdd[CUT_VAL_SIZE]={0};
+static uint16_t etaSous[CUT_VAL_SIZE]={0};
 
 // *************************************************************************
 // *************************************************************************
@@ -41,10 +42,12 @@ etaSous [0] = ETA/3			[1] =	ETA/2			[2] =	ETA/1
 /**************************************************************/
 //					FBAR_Initialize
 /**************************************************************/
-void FBAR_Initialize(void)
+void FBAR_Initialize(uint16_t EtaIndex)
 {
 	uint16_t i,j,range, delta;
 	
+  Eta = EtaIndex * 50;    // 1000 <= eta <= 5000
+  
 	range = 65535;
 	delta = range / (CUT_VAL_SIZE + 1);
 	
@@ -54,8 +57,8 @@ void FBAR_Initialize(void)
 	
 	for (i=0; i < CUT_VAL_SIZE; i++)
 	{
-		etaSous[i] = ETA / (i+1);
-		etaAdd[i]  = ETA / (CUT_VAL_SIZE-i);
+		etaSous[i] = Eta / (i+1);
+		etaAdd[i]  = Eta / (CUT_VAL_SIZE-i);
 	}
 }
 
@@ -126,8 +129,8 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (!i)
 			{
-				if (cutValue[channel][0] >  ETA + SECU * 5) 
-					cutValue[channel][i] -= etaSous[i];	
+				if (cutValue[channel][0] >  Eta + (5 * SECU)) 
+					cutValue[channel][0] -= Eta;
 			}
 			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i] + SECU)
 				cutValue[channel][i] -= etaSous[i];	
@@ -136,8 +139,8 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (i == CUT_VAL_SIZE-1) 
 			{
-				if (cutValue[channel][CUT_VAL_SIZE-1] <  65000 - ETA) 
-					cutValue[channel][i] += etaAdd[i];
+        if (cutValue[channel][CUT_VAL_SIZE-1] <  65535 - (5 * SECU) - Eta) 
+					cutValue[channel][CUT_VAL_SIZE-1] += Eta;
 			}
 			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i] + SECU)
 				cutValue[channel][i] += etaAdd[i];

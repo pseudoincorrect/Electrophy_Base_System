@@ -33,7 +33,7 @@ volatile uint16_t * DACptr;
 // **************************************************************
 //					ElectrophyData_Init
 // **************************************************************
-void ElectrophyData_Init(void)
+void ElectrophyData_Init(uint16_t EtaIndex)
 {
 	uint16_t i,j,k;
 	
@@ -72,7 +72,7 @@ void ElectrophyData_Init(void)
 	ElectrophyDataDAC.ReadIndexNrf  = 0;
 	ElectrophyDataDAC.WriteIndexNrf = 0;
 	
-	FBAR_Initialize();
+	FBAR_Initialize(EtaIndex);
 }
 
 // *************************************************************************
@@ -302,10 +302,10 @@ void ElectrophyData_SetOutPut(Output_device_t Output)
 // **************************************************************
 //					ElectrophyData_SetState
 // **************************************************************
-void ElectrophyData_SetState(DataStateTypeDef State)
+void ElectrophyData_SetState(DataStateTypeDef State, uint16_t eta)
 {
   ElectrophyData_State = State;
-  ElectrophyData_Init();
+  ElectrophyData_Init(eta);
 }
 
 

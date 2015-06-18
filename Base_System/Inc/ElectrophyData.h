@@ -67,7 +67,7 @@ typedef struct
 /**************************************************************/
 
 // Initialize the buffers and its pointers
-void ElectrophyData_Init(void);
+void ElectrophyData_Init(uint16_t EtaIndex);
 
 // function called to manage the NRF buffer
 uint16_t ElectrophyData_Checkfill_NRF(void);
@@ -89,7 +89,7 @@ uint8_t  ElectrophyData_Process(void);
 
 // set the  
 void ElectrophyData_SetOutPut(Output_device_t  Output);
-void ElectrophyData_SetState(DataStateTypeDef state);
+void ElectrophyData_SetState(DataStateTypeDef State, uint16_t eta);
 #endif
 
 

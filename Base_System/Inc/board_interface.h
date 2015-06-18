@@ -14,9 +14,12 @@
 #include "stm32f4xx_hal_cortex.h"
 #include "CommonInclude.h"
 #include "stm32f4xx_it.h"
+#include "stm32f4xx_hal_adc.h"
 
 #define  ALL_LEDS 0xFF
 #define  NO_LED   0xFE
+#define DELTA_ADC 2
+
 // Configure the clock for the periphérald
 void SystemClock_Config(void);
 
@@ -25,6 +28,12 @@ void Board_Init(void);
 
 // Initialize the GPIO
 static void GpioInit(void);
+
+//Initialize the ADC for the potentiometer
+static void AdcInit(void);
+
+//Initialize a periodic interript to check the potentiometer adc
+static void TIM3Init(uint32_t reloadValue, uint16_t prescalerValue);
 
 // Control the West/left led 
 static void WestLed(uint8_t state);
@@ -42,15 +51,19 @@ static void Board_Leds(uint8_t  state);
 
 static void LedsBlink(void);
 
-uint8_t Board_GetStateUpdate(void);
+uint8_t Board_GetUpdate(void);
 
-uint8_t Board_GetStateUpdate(void);
+uint8_t Board_GetUpdate(void);
 
 DataStateTypeDef Board_GetState(void);
 
 Output_device_t Board_GetOutput(void);
 
-void Board_ExtiInterruptEnable(uint8_t state);
+void Board_InterruptEnable(uint8_t state);
+
+void TIM3_IRQHandler(void);
+
+uint8_t Board_GetEtaIndex(void);
 
 #endif
 
