@@ -31,16 +31,17 @@
 //#define ETA					 	  3000						// adaptation parameter
 #define ETA_INDEX_INIT    50					// adaptation parameter
 #define	RANGE					    1000
-#define SECU              500
+#define SECU              250
 
-#define DEBUG1_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_15)
-#define DEBUG1_LOW		(GPIOA->BSRRH |= GPIO_PIN_15)
+#define FLAG_NO_UPDATE 0
+#define FLAG_UPDATE    1
 
-#define DEBUG2_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_8)
-#define DEBUG2_LOW		(GPIOA->BSRRH |= GPIO_PIN_8)
+#define FLAG_STATE    1
+#define FLAG_OUTPUT   2
+#define FLAG_ETA      3
 
-#define DEBUG3_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_10)
-#define DEBUG3_LOW		(GPIOA->BSRRH |= GPIO_PIN_10)
+#define DEBUG_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_15)
+#define DEBUG_LOW		(GPIOA->BSRRH |= GPIO_PIN_15)
 
 /**************************************************************/
 //					Enum

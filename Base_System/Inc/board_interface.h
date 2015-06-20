@@ -18,7 +18,7 @@
 
 #define  ALL_LEDS 0xFF
 #define  NO_LED   0xFE
-#define DELTA_ADC 2
+#define  DELTA_ADC 5
 
 // Configure the clock for the periphérald
 void SystemClock_Config(void);
@@ -35,34 +35,31 @@ static void AdcInit(void);
 //Initialize a periodic interript to check the potentiometer adc
 static void TIM3Init(uint32_t reloadValue, uint16_t prescalerValue);
 
-// Control the West/left led 
-static void WestLed(uint8_t state);
-
-// Control the North/Top led 
-static void NorthLed(uint8_t state);
-
-// Control the Est/Right led 
-static void EstLed(uint8_t state);
-
-// Control the South/bottom led 
-static void SouthLed(uint8_t state);
-	
-static void Board_Leds(uint8_t  state);
-
-static void LedsBlink(void);
-
-uint8_t Board_GetUpdate(void);
-
-uint8_t Board_GetUpdate(void);
-
-DataStateTypeDef Board_GetState(void);
-
-Output_device_t Board_GetOutput(void);
-
-void Board_InterruptEnable(uint8_t state);
-
+// call back the Timer interrupt
 void TIM3_IRQHandler(void);
 
+// call back the Push Button interrupt
+void EXTI0_IRQHandler(void);
+
+// Control respectively the top bottom left rigth leds 
+static void Leds(uint8_t haut, uint8_t bas, uint8_t gauche, uint8_t droite);
+
+// ligth the led in function of state
+void Board_Leds(uint8_t  state, Output_device_t output);
+
+// blink all the leds
+void Board_LedsBlink(DataStateTypeDef CurrentState, Output_device_t output);
+
+// check if the push button was push or the pot turned
+uint8_t Board_CheckUpdate(void);
+
+// get which updtade is set (output, state, or eta)
+uint8_t Board_GetUpdate(void);
+
+// enable timer and EXTI interrupt in fuction of the state 
+void Board_Interrupt(uint8_t input, DataStateTypeDef CurrentState);
+
+// get a value of eta between 0 and  100 in function of the Adc_pot
 uint8_t Board_GetEtaIndex(void);
 
 #endif

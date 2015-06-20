@@ -292,20 +292,13 @@ uint8_t ElectrophyData_Process(void)
 }
 
 // **************************************************************
-//					ElectrophyData_SetOutPut
+//					ElectrophyData_Reset
 // **************************************************************
-void ElectrophyData_SetOutPut(Output_device_t Output)
-{
-  ElectrophyData_Output = Output;
-}  
-
-// **************************************************************
-//					ElectrophyData_SetState
-// **************************************************************
-void ElectrophyData_SetState(DataStateTypeDef State, uint16_t eta)
+void ElectrophyData_Reset(Output_device_t Output, DataStateTypeDef State, uint16_t eta)
 {
   ElectrophyData_State = State;
   ElectrophyData_Init(eta);
-}
+  ElectrophyData_Output = Output;
+}  
 
 

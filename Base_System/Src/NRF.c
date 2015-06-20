@@ -313,12 +313,13 @@ void CsnDigitalWrite(const NRF_Conf * nrf, uint8_t state)
 	else 			  nrf->PORT_CSN->BSRRH |= nrf->PIN_CSN;
 }
 
-static uint8_t indexSpi;
+
 // **************************************************************
 //					SpiSend 
 // **************************************************************
 static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 {
+  uint8_t indexSpi;
 	SPI_TypeDef * spi = nrf->SPI_INSTANCE;
 	
 	CsnDigitalWrite(nrf, LOW); //N_slave select lox
@@ -338,6 +339,7 @@ static void SpiSend(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 // **************************************************************
 static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t length)
 {
+  uint8_t indexSpi;
 	SPI_TypeDef * spi =  nrf->SPI_INSTANCE;
 	
 	CsnDigitalWrite(nrf, LOW); //N_slave select lox
@@ -363,7 +365,7 @@ static void RegisterInit(const NRF_Conf * nrf)
 	// disable auto acknowledgement
 	uint8_t disableAutoAck[2] 	= {W_REGISTER | EN_AA 		 , 0x00};
 	// set size payload 32 byte
-	uint8_t rxPayloadSize[2] 	= {W_REGISTER | RX_PW_P0 	 , 32  };
+	uint8_t rxPayloadSize[2] 	  = {W_REGISTER | RX_PW_P0 	 , 32  };
 	// set pipe enabled  0b 0000 0001 (pipe 0 enabled)
 	uint8_t rxPipe[2] 					= {W_REGISTER | EN_RXADDR  , 0x01};
 	// set size adresse RX 3 byte
@@ -371,19 +373,19 @@ static void RegisterInit(const NRF_Conf * nrf)
 	// set RX ADDR P0
 	uint8_t rxAdressP0[6] 			= {W_REGISTER | RX_ADDR_P0 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 		// set RX ADDR P0
-	uint8_t txAdress[6]  			= {W_REGISTER | TX_ADDR 	 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
+	uint8_t txAdress[6]  			  = {W_REGISTER | TX_ADDR 	 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
 	// set RF chanel 		 0b 0000 0010 (2400 MHz + 2 MHz) 
 	uint8_t rfChanel[2] 				= {W_REGISTER | RF_CH 		 , 0x02};
 	// set RF parameters 0b 0000 1110 (2Mbps, 0dB)
-	uint8_t rfParameter[2] 		= {W_REGISTER | RF_SETUP   , 0x0E};
+	uint8_t rfParameter[2] 		  = {W_REGISTER | RF_SETUP   , 0x0E};
 	// set Receive mode  0b 0011 0011 
-	uint8_t receiveMode[2] 		= {W_REGISTER | CONFIG		 , 0x33};
+	uint8_t receiveMode[2] 		  = {W_REGISTER | CONFIG		 , 0x33};
 	// clear IRQ
 	uint8_t clearIrq[2] 		  	= {W_REGISTER | STATUS		 , 0x60};
 	// flush Rx fifo
 	uint8_t flushRxFifo 				= FLUSH_RX;
 	// flush Tx fifo
-	uint8_t flushTxFifo				= FLUSH_TX;
+	uint8_t flushTxFifo				  = FLUSH_TX;
 	
 	CeDigitalWrite(nrf, LOW);
 	
@@ -403,14 +405,15 @@ static void RegisterInit(const NRF_Conf * nrf)
 	CeDigitalWrite(nrf, HIGH);
 }
 
-static uint8_t DataTransmit[BYTES_PER_FRAME + 1] = {0};
+
+static uint8_t DataTransmit[BYTES_PER_FRAME + 1];
 // **************************************************************
 // 					NRF_SendNewState
 // **************************************************************
 void NRF_SendNewState(uint8_t DataState)
 {  
-  uint8_t i;
-  
+  volatile uint16_t i,j;
+
   uint8_t transmitMode[2] = {W_REGISTER | CONFIG, 0x52};
   uint8_t clearIrqFlag[2] = {W_REGISTER | STATUS, 0x60};
   uint8_t flushTxFifo		 	= FLUSH_TX;
@@ -419,41 +422,43 @@ void NRF_SendNewState(uint8_t DataState)
   
   while(FLAG_PACKET)
   {;}
-  
-  DataTransmit[0] = W_TX_PAYLOAD;
+   
   for(i=1; i < BYTES_PER_FRAME+1; i++)
   {
-     DataTransmit[i] = ((uint8_t)  DataState) + i-1;
+     DataTransmit[i] = ((uint8_t)  DataState) + (i-1);
   }
- 
+  DataTransmit[0] = W_TX_PAYLOAD;
+  
   while(TRANSFERT_FLAG) {;}
   
   CeDigitalWrite(&nrf1, LOW);
   
   SpiSend(&nrf1, transmitMode, sizeof(transmitMode));
- 
-  SpiSend(&nrf1, &flushTxFifo, 1);
- 
   SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
     
-  for(i=0; i < 50; i++)	
-  {  
+  for(i=1; i < 75; i++)
+  {
+    SpiSend(&nrf1, &flushTxFifo, 1);
+    SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
+    
     SpiSend(&nrf1,	DataTransmit, sizeof(DataTransmit));
     CeDigitalWrite(&nrf1, HIGH);
     
     while ((HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == 1)) {;}
     
-    CeDigitalWrite(&nrf1, LOW);    
-    SpiSend(&nrf1,	clearIrqFlag, sizeof(clearIrqFlag));
-    SpiSend(&nrf1,	&flushTxFifo, 1);
-    CeDigitalWrite(&nrf1, HIGH);
+   for(j=1; j < 5000; j++)  // small delay to let the embedded system listening the chanel
+      __nop();
   }
+  
+   SpiSend(&nrf1, &flushTxFifo, 1);
+   SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
   
   CeDigitalWrite(&nrf1, LOW);
   RegisterInit(&nrf1);
 
   ExtiInterruptEnable(HIGH);
 }
+
 
 // **************************************************************
 // 					NRF_Test

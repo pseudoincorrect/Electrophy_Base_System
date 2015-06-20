@@ -1,8 +1,6 @@
 #include "board_interface.h"
 
-static DataStateTypeDef   DataState = FIRST_STATE;
-static Output_device_t    Output_device = FIRST_OUTPUT;
-static uint8_t            FlagUpdate = 0;
+volatile static uint8_t  FlagUpdate, FlagState, FlagOutput, FlagEta;
 static ADC_HandleTypeDef  AdcHandle;
 static TIM_HandleTypeDef  TimHandle;
 
@@ -48,8 +46,12 @@ void Board_Init(void)
 {
 	GpioInit();
   AdcInit();
-	Board_Leds(DataState);
   TIM3Init(500, 300);
+  
+  FlagUpdate  = 0;
+  FlagState   = 0;
+  FlagOutput  = 0;
+  FlagEta     = 0;
 }
 
 /**************************************************************/
@@ -59,34 +61,36 @@ static void GpioInit(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
   
+  //****************************************************** LED's
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  
+    /*##-2- Configure peripheral GPIO ##########################################*/ 
+  /* ADC1 Channel1 GPIO pin configuration */
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
+  
+//   //****************************************************** debug pin
+//	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  GPIO_InitStruct.Pin =  GPIO_PIN_15 | GPIO_PIN_10 | GPIO_PIN_8;
+//  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  
   //****************************************************** Push button	
-	 /* Configure PA.15 pin as input floating */
+  /* Configure PA0 pin as input floating */
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* Enable and set EXTI line 0 Interrupt to the lowest priority */
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
+  /* Enable and set EXTI Line0 Interrupt to the lowest priority */
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-	
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-
-//****************************************************** LED's
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-  
-    /*##-2- Configure peripheral GPIO ##########################################*/ 
-  /* ADC3 Channel8 GPIO pin configuration */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  
 }
 
 // *************************************************************
@@ -144,16 +148,12 @@ static void TIM3Init(uint32_t reloadValue, uint16_t prescalerValue)
   __HAL_TIM_ENABLE(&TimHandle);
 }
 
-
-uint8_t changeOutput = 0, indexState = 0;
-DataStateTypeDef stateSystem[4] = 
-{__8ch_16bit_20kHz__C__, __4ch_16bit_20kHz_NC__, __8ch_16bit_10kHz_NC__, __8ch_8bit__20kHz_NC__};
 /**************************************************************/
 //					EXTI0_IRQHandler
 /**************************************************************/
 void EXTI0_IRQHandler(void)
 {
-  static uint32_t ticksIn;
+  uint32_t ticksIn;
   
 	if (EXTI->PR & EXTI_PR_PR0)
 	{
@@ -168,200 +168,21 @@ void EXTI0_IRQHandler(void)
     {
      if (It_getTicks() - ticksIn > 850)
       {
-        changeOutput = 1;
+        FlagOutput = 1;
         break;
       }
     }
     
-    if (!changeOutput)
-    {
-      indexState = (indexState >= 3) ? 0 : indexState+1;
-      Board_Leds((uint8_t) stateSystem[indexState]);   
-      DataState = stateSystem[indexState];     
-	  }
-    else
-    {
-      LedsBlink();
-      if(Output_device == Dac)
-        Output_device = Usb;
-      else
-        Output_device = Dac;
-    }
-    changeOutput = 0;
-    
-    if (DataState == __8ch_16bit_20kHz__C__)
-      HAL_NVIC_EnableIRQ(TIM3_IRQn);      // enable timer (adc potentiometer) interrupt
-    else
-		 HAL_NVIC_DisableIRQ(TIM3_IRQn);     // or disable it
-      
-        
+    if (!FlagOutput)
+      FlagState = 1;
+
     FlagUpdate = 1;
-    
-    while((GPIOA->IDR & GPIO_PIN_0))
-    {;} 
-      
   }
   EXTI->PR = EXTI_PR_PR0;
 }
 
-/**************************************************************/
-//					WestLed
-/**************************************************************/	
-static void WestLed(uint8_t state)
-{
-  if (state)  GPIOD->BSRRL |= GPIO_PIN_12; 
-	else 			  GPIOD->BSRRH |= GPIO_PIN_12;
-}
-
-/**************************************************************/
-//					NorthLed
-/**************************************************************/	
-static void NorthLed(uint8_t state)
-{
-  if (state)  GPIOD->BSRRL |= GPIO_PIN_13; 
-	else 			  GPIOD->BSRRH |= GPIO_PIN_13;
-}
-
-/**************************************************************/
-//					EstLed
-/**************************************************************/	
-static void EstLed(uint8_t state)
-{
-  if (state)  GPIOD->BSRRL |= GPIO_PIN_14; 
-	else 			  GPIOD->BSRRH |= GPIO_PIN_14;
-}
-
-/**************************************************************/
-//					SouthLed
-/**************************************************************/	
-static void SouthLed(uint8_t state)
-{
-  if (state)  GPIOD->BSRRL |= GPIO_PIN_15; 
-	else 			  GPIOD->BSRRH |= GPIO_PIN_15;
-}
-
-/**************************************************************/
-//					Board_Leds
-/**************************************************************/
-static void Board_Leds(uint8_t  state)
-{
-	switch(state)
-	{
-		case ((uint8_t) __8ch_16bit_20kHz__C__) :
-			WestLed(LOW);
-			NorthLed(HIGH);
-      EstLed(LOW);
-      SouthLed(LOW);
-			break;
-		case ((uint8_t) __4ch_16bit_20kHz_NC__) :
-			WestLed(LOW);
-			NorthLed(LOW);
-      EstLed(HIGH);
-      SouthLed(LOW);
-			break;
-		case ((uint8_t) __8ch_16bit_10kHz_NC__) :
-			WestLed(LOW);
-			NorthLed(LOW);
-      EstLed(LOW);
-      SouthLed(HIGH);
-			break;
-		case ((uint8_t) __8ch_8bit__20kHz_NC__ ) :
-      WestLed(HIGH);
-			NorthLed(LOW);
-      EstLed(LOW);
-      SouthLed(LOW);
-			break;
-    case NO_LED :
-      WestLed(LOW);
-			NorthLed(LOW);
-      EstLed(LOW);
-      SouthLed(LOW);
-			break;
-    case ALL_LEDS :
-      WestLed(HIGH);
-			NorthLed(HIGH);
-      EstLed(HIGH);
-      SouthLed(HIGH);
-			break;
-    default :
-      break;
-	}		
-}
-
- /**************************************************************/
-//					Leds_Blink
-/**************************************************************/
-static void LedsBlink(void)
-{
-  static uint8_t i;
-  static uint32_t ticksIn;
-  
-  Board_Leds(ALL_LEDS);
-  
-  for(i = 0; i < 4; i++)
-  {
-     ticksIn = It_getTicks();
-     Board_Leds(ALL_LEDS);
-     while (( It_getTicks() - ticksIn) < 100)
-     {;}
-       
-     ticksIn = It_getTicks();
-     Board_Leds(NO_LED);
-     while ((It_getTicks() - ticksIn) < 200)
-     {;}  
-  }
-  Board_Leds((uint8_t) DataState); 
-}  
-
-/**************************************************************/
-//					Board_GetUpdate
-/**************************************************************/
-uint8_t Board_GetUpdate(void)
-{
-  if (FlagUpdate)
-  {
-    FlagUpdate = 0;
-    return HIGH;
-  }
-  else 
-    return LOW;
-}
-
-/**************************************************************/
-//					Board_GetState
-/**************************************************************/
-DataStateTypeDef Board_GetState(void)
-{
-  return DataState;
-}
-
-/**************************************************************/
-//					Board_GetOutput
-/**************************************************************/
-Output_device_t Board_GetOutput(void)
-{
-  return Output_device;
-}
-
-// *************************************************************
-// 	 				Board_ExtiInterruptEnable 
-// *************************************************************
-void Board_InterruptEnable(uint8_t state)
-{
-  if (state) 
-  {  
-    HAL_NVIC_EnableIRQ(TIM3_IRQn);
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-  }
-  else
-  {                               
-    HAL_NVIC_DisableIRQ(TIM3_IRQn);
-    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-  }
-}
-
 static uint8_t toggle;
-volatile static uint32_t adcVal, AdcResult = 0;
+volatile uint32_t adcVal, AdcResult = 0;
 /**************************************************************/
 //					TIM3_IRQHandler
 /**************************************************************/
@@ -382,8 +203,11 @@ void TIM3_IRQHandler(void)
         adcVal =  HAL_ADC_GetValue(&AdcHandle);
         if (adcVal - DELTA_ADC >  AdcResult || adcVal + DELTA_ADC <  AdcResult)
         {
-          AdcResult =  adcVal;         
-          FlagUpdate = 1;
+         
+         FlagEta = 1;
+         FlagUpdate = 1;
+         AdcResult =  adcVal;
+          
         }
         toggle = 1;
       }
@@ -392,6 +216,148 @@ void TIM3_IRQHandler(void)
 		}	
 	}
 }  
+
+/**************************************************************/
+//					Leds
+/**************************************************************/	
+static void Leds(uint8_t haut, uint8_t bas, uint8_t gauche, uint8_t droite)
+{ 
+  if (haut)  GPIOD->BSRRL |= GPIO_PIN_13; 
+	else 			  GPIOD->BSRRH |= GPIO_PIN_13;
+  
+  if (bas)  GPIOD->BSRRL |= GPIO_PIN_15; 
+	else 			  GPIOD->BSRRH |= GPIO_PIN_15;
+  
+  if (gauche)  GPIOD->BSRRL |= GPIO_PIN_12; 
+	else 			  GPIOD->BSRRH |= GPIO_PIN_12;
+  
+  if (droite)  GPIOD->BSRRL |= GPIO_PIN_14; 
+	else 			  GPIOD->BSRRH |= GPIO_PIN_14;  
+}
+
+/**************************************************************/
+//					Board_Leds
+/**************************************************************/
+void Board_Leds(uint8_t  state, Output_device_t output)
+{
+	switch(state)
+	{
+		case ((uint8_t) __8ch_16bit_20kHz__C__) :
+			if (output == Usb)
+        Leds(1,0,0,0);
+      else 
+        Leds(0,1,1,1);
+			break;    
+		case ((uint8_t) __4ch_16bit_20kHz_NC__) :
+			if (output == Usb)
+        Leds(0,0,0,1);
+      else 
+        Leds(1,1,1,0);
+			break;
+		case ((uint8_t) __8ch_16bit_10kHz_NC__) :
+			if (output == Usb)
+        Leds(0,1,0,0);
+      else 
+        Leds(1,0,1,1);
+			break;
+		case ((uint8_t) __8ch_8bit__20kHz_NC__ ) :
+			if (output == Usb)
+        Leds(0,0,1,0);
+      else 
+        Leds(1,1,0,1);
+			break;
+    case NO_LED :
+			Leds(0,0,0,0);
+			break;
+    case ALL_LEDS :
+			Leds(1,1,1,1);
+			break;
+    default :
+      break;
+	}		
+}
+
+ /**************************************************************/
+//					Leds_Blink
+/**************************************************************/
+void Board_LedsBlink(DataStateTypeDef CurrentState, Output_device_t output)
+{
+  static uint8_t i;
+  static uint32_t ticksIn;
+  
+  Board_Leds(ALL_LEDS, output);
+  
+  for(i = 0; i < 4; i++)
+  {
+     ticksIn = It_getTicks();
+     Board_Leds(ALL_LEDS, Usb);
+     while (( It_getTicks() - ticksIn) < 100)
+     {;}
+       
+     ticksIn = It_getTicks();
+     Board_Leds(NO_LED, output);
+     while ((It_getTicks() - ticksIn) < 200)
+     {;}  
+  }
+  Board_Leds((uint8_t) CurrentState, output); 
+}  
+
+/**************************************************************/
+//					Board_CheckUpdate
+/**************************************************************/
+uint8_t Board_CheckUpdate(void)
+{
+  if (FlagUpdate)
+  {
+    FlagUpdate = 0;
+    return FLAG_UPDATE;
+  } 
+  else
+    return FLAG_NO_UPDATE;
+}
+  
+/**************************************************************/
+//					Board_GetUpdate
+/**************************************************************/
+uint8_t Board_GetUpdate(void)
+{
+  if (FlagState)
+  {
+    FlagState = 0;
+    return FLAG_STATE;
+  }
+  else  if (FlagOutput)
+  {
+    FlagOutput = 0;
+    return FLAG_OUTPUT;
+  }
+  else  if (FlagEta)
+  {
+    FlagEta = 0;
+    return FLAG_ETA;
+  }
+  else 
+    return FLAG_NO_UPDATE;
+}
+
+// *************************************************************
+// 	 				Board_ExtiInterruptEnable 
+// *************************************************************
+void Board_Interrupt(uint8_t input, DataStateTypeDef CurrentState)
+{
+  if (input) 
+  {  
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    if (CurrentState == __8ch_16bit_20kHz__C__)
+      HAL_NVIC_EnableIRQ(TIM3_IRQn);
+  }
+  else
+  {  
+   
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);   
+    HAL_NVIC_DisableIRQ(TIM3_IRQn); 
+  }
+} 
 
 /**************************************************************/
 //					Board_GetEtaIndex

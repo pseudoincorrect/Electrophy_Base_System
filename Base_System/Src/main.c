@@ -5,62 +5,75 @@
 #include "DAC.h"
 #include "ElectrophyData.h"
 #include "board_interface.h"
-#include "stm32f4xx_hal_gpio.h"
 
 // *************************************************************************
 // *************************************************************************
 // 						Private functions	
 // *************************************************************************
 // *************************************************************************
-static void ClockInit(void);
-static void SetOutput(Output_device_t  Output_device);
-static void ChangeState(void);
+// initialize all the hardware clocks
+static void             ClockInit   (void);
+//select the output (Dac or Usb)
+static void             SetOutput   (Output_device_t  Output_device);
+// apply the change considering the new state
+static void             ChangeState (void);
+// set the next state of the state machine (Moore state machine)
+static DataStateTypeDef NextState   (void);
 
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static Output_device_t Output_device = FIRST_OUTPUT;
-static DataStateTypeDef DataState = FIRST_STATE;
-static GPIO_InitTypeDef GPIO_InitStruct;
+const DataStateTypeDef stateSystem[4] = { 
+  __8ch_16bit_20kHz__C__, 
+  __4ch_16bit_20kHz_NC__, 
+  __8ch_16bit_10kHz_NC__, 
+  __8ch_8bit__20kHz_NC__
+};
 
-static volatile uint8_t EtaIndex = 0;
+static Output_device_t  Output_device;
+static DataStateTypeDef State;
+static     uint8_t      EtaIndex;
+
 // *************************************************************************
 // *************************************************************************
-// 								 MAIN
+// 								               MAIN
 // *************************************************************************
 // *************************************************************************
 int main(void)
 {	
+  // STM32 CORE initialization
+  ClockInit(); 					// Initialize all configured peripherals clocks
   HAL_Init();						// Reset of all peripherals, Initializes the Flash interface and the Systick
   SystemClock_Config(); // Configure the system clock
-	ClockInit(); 					// Initialize all configured peripherals clocks
 	
+  // HARDWARE initialization
   DAC_Init();
-	MX_USB_DEVICE_Init();   
-	
-	NRF_Init();
+  MX_USB_DEVICE_Init(); 
+  NRF_Init();
   Board_Init();
-
-  SetOutput(Output_device);
-	
-  ElectrophyData_Init(ETA_INDEX_INIT); 
+	  
+  // SOFTWARE initialization
+  Output_device = FIRST_OUTPUT;
+  EtaIndex      = ETA_INDEX_INIT;
+  State         = NextState();
   
-	//****************************************************** debug pin
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Pin =  GPIO_PIN_15 | GPIO_PIN_10 | GPIO_PIN_8;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
- 
-
+  SetOutput(Output_device);	
+  ElectrophyData_Reset(Output_device, State, EtaIndex);
+  Board_Interrupt(HIGH, State); 
+  DAC_SetNewState(State);
+  Board_Leds(State, Output_device);
+  //Board_LedsBlink(State);
+  
+  // INFINITE LOOP 
 	while (1)
   { 
-    if (Board_GetUpdate())
+    if (Board_CheckUpdate())
     {
-      Board_InterruptEnable(LOW); // Disable push button interrupt
+      Board_Interrupt(LOW, State);
       ChangeState();
-      Board_InterruptEnable(HIGH);  // Ensable push button interrupt
+      Board_Interrupt(HIGH, State);
     }  
     ElectrophyData_Process();
 	}
@@ -76,16 +89,15 @@ int main(void)
 // **************************************************************
 static void ClockInit(void)
 {
-    __PWR_CLK_ENABLE();
+  __PWR_CLK_ENABLE();
   
   // GPIO Ports Clock Enable 
-  __GPIOH_CLK_ENABLE();
   __GPIOA_CLK_ENABLE();	
 	__GPIOB_CLK_ENABLE();
 	__GPIOC_CLK_ENABLE();
 	__GPIOD_CLK_ENABLE();
-
 	__GPIOE_CLK_ENABLE();
+  __GPIOH_CLK_ENABLE();
 	
 	__SPI1_CLK_ENABLE();
 	__SPI2_CLK_ENABLE();
@@ -124,36 +136,63 @@ static void SetOutput(Output_device_t  Output_device)
 // **************************************************************
 static void ChangeState(void)
 {
-  //Change the Output : Usb or dac
-  if(Output_device != Board_GetOutput()) 
+  switch (Board_GetUpdate())
   {
-    Output_device = Board_GetOutput();
-    SetOutput(Output_device);
-    ElectrophyData_SetOutPut(Output_device);
-  }
-  
-  //Change the DataState
-  if((DataState != Board_GetState()) || (EtaIndex != Board_GetEtaIndex())) 
-  {
-    DataState = Board_GetState();
-    EtaIndex = Board_GetEtaIndex();
-  
-    if (DataState == __8ch_16bit_20kHz__C__)
+    //Change and send the State of the system
+    case (FLAG_STATE) :
     {
-      NRF_SendNewState(EtaIndex + 100);
-      ElectrophyData_SetState(__8ch_16bit_20kHz__C__, EtaIndex);
-      DAC_SetNewState(__8ch_16bit_20kHz__C__);
+      State = NextState();  
+      if (State == __8ch_16bit_20kHz__C__)
+      {
+        EtaIndex = Board_GetEtaIndex();
+        NRF_SendNewState(EtaIndex + 100);
+      }
+      else
+        NRF_SendNewState((uint8_t) State);      
+      ElectrophyData_Reset(Output_device, State, EtaIndex);
+      DAC_SetNewState(State); 
+      Board_Leds(State, Output_device);  
+      break;
     }
-    else
+    
+    //Change the Output : Usb or dac
+    case (FLAG_OUTPUT) :
+    {           
+      Output_device = (Output_device == Usb) ? Dac : Usb; 
+      SetOutput(Output_device);
+      ElectrophyData_Reset(Output_device, State, EtaIndex);
+      Board_LedsBlink(State, Output_device);      
+      break;
+    }
+    
+    //Change and send the Eta used by FBAR
+    case (FLAG_ETA) :
     {
-      NRF_SendNewState((uint8_t) DataState);
-      ElectrophyData_SetState(DataState, EtaIndex);
-      DAC_SetNewState(DataState);
+      if (State == __8ch_16bit_20kHz__C__)
+      {
+        Board_Leds(NO_LED, Output_device);
+        EtaIndex = Board_GetEtaIndex();
+        NRF_SendNewState(EtaIndex + 100);
+        ElectrophyData_Reset(Output_device, State, EtaIndex);
+        Board_Leds(State, Output_device);
+      }
+      break;
     }
+    
+    default :
+      break;
   }
+}  
+
+static uint8_t indexState = 3;
+// **************************************************************
+// 	 				            NextState 
+// **************************************************************
+static DataStateTypeDef NextState(void)
+{
+  indexState = (indexState >= 3) ? 0 : indexState+1;
+  return stateSystem[indexState];     
 }
-
-
 
 
 
