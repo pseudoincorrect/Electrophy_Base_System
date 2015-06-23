@@ -229,8 +229,11 @@ static void DAC_Refresh(const DAC_Conf * dac)
 		SampleData = ElectrophyData_Read_DAC();
 		DAC_SendSample(&dac1, SampleData);
 	}
-	else 
-		SpiSend(&dac1, DAC_Empty);
+	else
+  {
+    __nop();
+    SpiSend(&dac1, DAC_Empty);
+  }
 }
 
 static uint8_t dataCnt;
@@ -301,12 +304,12 @@ void DAC_SetNewState(DataStateTypeDef State)
   
   if (DataState == __8ch_16bit_10kHz_NC__)
   {
-    TIM2Init(264, 40);  //set the dac refreshing rate at 10 kHz
+    TIM2Init(497, 20);  //set the dac refreshing rate at 10 kHz
     DAC_Enable(HIGH);
   }
   else 
   {
-    TIM2Init(264, 20);  //set the dac refreshing rate at 20 kHz
+    TIM2Init(260, 20);  //set the dac refreshing rate at 20 kHz
     DAC_Enable(HIGH);
   }
 }
