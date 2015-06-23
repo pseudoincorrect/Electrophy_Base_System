@@ -31,7 +31,6 @@
 //#define ETA					 	  3000						// adaptation parameter
 #define ETA_INDEX_INIT    50					// adaptation parameter
 #define	RANGE					    1000
-#define SECU              250
 
 #define FLAG_NO_UPDATE 0
 #define FLAG_UPDATE    1

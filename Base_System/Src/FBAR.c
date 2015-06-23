@@ -49,6 +49,7 @@ void FBAR_Initialize(uint16_t EtaIndex)
   Eta = EtaIndex * 50;    // 1000 <= eta <= 5000
   
 	range = 65535;
+  
 	delta = range / (CUT_VAL_SIZE + 1);
 	
 	for(i=0; i < CHANNEL_SIZE; i++)
@@ -91,7 +92,8 @@ volatile uint16_t winner;
 void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 {
 	uint16_t i, j;
-	
+	int32_t tempValue;
+  
 	// loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
@@ -103,12 +105,23 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 			winner = (*bufferFrom) & 0x07;
       bufferFrom++;
       
-      if (!winner)
-          *bufferTo++ = (( cutValue[j][0] - ((cutValue[j][1]-cutValue[j][0])/2) ) >> 1) & 0x7FFF;
+     if (!winner)
+      { 
+        tempValue  = cutValue[j][0]-(cutValue[j][1]-cutValue[j][0])/2;
+        if ( tempValue < 0)
+          tempValue = cutValue[j][0];
+        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
+      }      
       else if (winner == CUT_VAL_SIZE)
-          *bufferTo++ = ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)) >> 1)  & 0x7FFF;
+      {
+        tempValue =   ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
+        if (tempValue > 65535 )
+          tempValue = cutValue[j][CUT_VAL_SIZE-1];
+        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
+          
+      }  
       else
-          *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
+        *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
 			// set the new the cut values
 			FBAR_AdaptCutValues(j, winner);
 		}
@@ -129,20 +142,20 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (!i)
 			{
-				if (cutValue[channel][0] >  Eta + (5 * SECU)) 
+				if (cutValue[channel][0] >  Eta) 
 					cutValue[channel][0] -= Eta;
 			}
-			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i] + SECU)
+			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i])
 				cutValue[channel][i] -= etaSous[i];	
 		}
 		else 
 		{
 			if (i == CUT_VAL_SIZE-1) 
 			{
-        if (cutValue[channel][CUT_VAL_SIZE-1] <  65535 - (5 * SECU) - Eta) 
+        if (cutValue[channel][CUT_VAL_SIZE-1] <  65535 - Eta) 
 					cutValue[channel][CUT_VAL_SIZE-1] += Eta;
 			}
-			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i] + SECU)
+			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i])
 				cutValue[channel][i] += etaAdd[i];
 		}
 	}
