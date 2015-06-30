@@ -17,6 +17,8 @@ static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void RegisterInit(const NRF_Conf * nrf);
 
+
+  
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
@@ -31,6 +33,25 @@ static uint16_t  Spi2RxBuffer[BYTES_PER_FRAME + 1] = {0}; // buffer for Dma RX
 volatile static uint8_t TRANSFERT_FLAG = 0;
 volatile static uint8_t FLAG_PACKET = 0;  //Flag is set when a transmission packet is alread in process
 
+static uint8_t RxAdressP0[6] 			= {W_REGISTER | RX_ADDR_P0, 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};  // set RX ADDR P0
+static uint8_t TxAdress[6]  			= {W_REGISTER | TX_ADDR 	, 0xE7, 0xE7, 0xE7, 0xE7, 0xE7}; // set RX ADDR P0
+static uint8_t DisableAutoAck[2] 	= {W_REGISTER | EN_AA 		, 0x00};         // disable auto acknowledgement
+static uint8_t RxPayloadSize[2] 	= {W_REGISTER | RX_PW_P0 	, 32  };        // set size payload 32 byte
+static uint8_t RxPipe[2] 					= {W_REGISTER | EN_RXADDR , 0x01};       // set pipe enabled (pipe 0)   0b 0000 0001 
+static uint8_t RxTxAdressSize[2] 	= {W_REGISTER | SETUP_AW  , 0x01};      // set size adresse RX 3 byte   0b 0000 0001
+static uint8_t RfChanel[2] 				= {W_REGISTER | RF_CH 		, 0x02};     // set RF chanel (2.4GHz+2MHz)	  0b 0000 0010  
+static uint8_t RfParameter[2] 		= {W_REGISTER | RF_SETUP  , 0x0E};    // set RF parameters (2Mbps, 0dB) 0b 0000 1110
+static uint8_t ReceiveMode[2] 		= {W_REGISTER | CONFIG		, 0x33};   // set Receive mode                0b 0011 0011 
+static uint8_t TransmitMode[2]    = {W_REGISTER | CONFIG    , 0x52};  // set Transmit mode                0b 0101 0010
+static uint8_t ClearIrqFlag[2]    = {W_REGISTER | STATUS    , 0x70}; // clear IRQ                         0b 1110 0000
+static uint8_t FlushRxFifo 				= FLUSH_RX;                       // flush Rx fifo
+static uint8_t FlushTxFifo				= FLUSH_TX;                      // flush Tx fifo
+  
+// *************************************************************************
+// *************************************************************************
+// 						Const variables	
+// *************************************************************************
+// *************************************************************************
 // Right NRF
 const NRF_Conf nrf1 = {	
 		GPIOB, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5, // SCK, MISO, MOSI
@@ -232,8 +253,6 @@ static void DmaInit(const NRF_Conf * nrf)
 }
 
 static uint8_t * NrfWritePtr;
-static uint8_t flushRxFifo 				= FLUSH_RX;
-static uint8_t ClearIrqFlag[2] = {W_REGISTER | STATUS, 0x70};
 static uint8_t Receive = R_RX_PAYLOAD;
 static uint8_t Dummy 	 = 0x00;
 // **************************************************************
@@ -249,7 +268,7 @@ void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 	//load the destination adress in the DMA controler for the next transfert
 	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) (NrfWritePtr+1);
 	
-	SpiSend(nrfBackup, &flushRxFifo, 1);
+	SpiSend(nrfBackup, &FlushRxFifo, 1);
 	SpiSend(nrfBackup, ClearIrqFlag, sizeof(ClearIrqFlag) );
 	
 	// Send read command to the NRF before read through the DMA and keep CSN low
@@ -361,47 +380,21 @@ static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t leng
 // **************************************************************
 static void RegisterInit(const NRF_Conf * nrf)
 {
-	//declaration of instruction to send to the NRF
-	// disable auto acknowledgement
-	uint8_t disableAutoAck[2] 	= {W_REGISTER | EN_AA 		 , 0x00};
-	// set size payload 32 byte
-	uint8_t rxPayloadSize[2] 	  = {W_REGISTER | RX_PW_P0 	 , 32  };
-	// set pipe enabled  0b 0000 0001 (pipe 0 enabled)
-	uint8_t rxPipe[2] 					= {W_REGISTER | EN_RXADDR  , 0x01};
-	// set size adresse RX 3 byte
-	uint8_t rxTxAdressSize[2] 	= {W_REGISTER | SETUP_AW   , 0x01};
-	// set RX ADDR P0
-	uint8_t rxAdressP0[6] 			= {W_REGISTER | RX_ADDR_P0 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
-		// set RX ADDR P0
-	uint8_t txAdress[6]  			  = {W_REGISTER | TX_ADDR 	 , 0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
-	// set RF chanel 		 0b 0000 0010 (2400 MHz + 2 MHz) 
-	uint8_t rfChanel[2] 				= {W_REGISTER | RF_CH 		 , 0x02};
-	// set RF parameters 0b 0000 1110 (2Mbps, 0dB)
-	uint8_t rfParameter[2] 		  = {W_REGISTER | RF_SETUP   , 0x0E};
-	// set Receive mode  0b 0011 0011 
-	uint8_t receiveMode[2] 		  = {W_REGISTER | CONFIG		 , 0x33};
-	// clear IRQ
-	uint8_t clearIrq[2] 		  	= {W_REGISTER | STATUS		 , 0x60};
-	// flush Rx fifo
-	uint8_t flushRxFifo 				= FLUSH_RX;
-	// flush Tx fifo
-	uint8_t flushTxFifo				  = FLUSH_TX;
-	
 	CeDigitalWrite(nrf, LOW);
 	
 	// sending of the instructions to the NRF
-	SpiSend(nrf,	disableAutoAck, sizeof(disableAutoAck));
-	SpiSend(nrf,	rxPayloadSize, 	sizeof(rxPayloadSize)	);
-	SpiSend(nrf,	rxPipe, 				sizeof(rxPipe)				);
-	SpiSend(nrf,	rxTxAdressSize,	sizeof(rxTxAdressSize));
-	SpiSend(nrf,	rxAdressP0,   	sizeof(rxAdressP0)		);
-	SpiSend(nrf,	txAdress,   		sizeof(txAdress)			);
-	SpiSend(nrf,	rfChanel, 			sizeof(rfChanel)			);
-	SpiSend(nrf,	rfParameter, 		sizeof(rfParameter)		);
-	SpiSend(nrf,	&flushRxFifo, 	1											);
-	SpiSend(nrf,	&flushTxFifo, 	1											);
-	SpiSend(nrf,	receiveMode, 	  sizeof(receiveMode)	  );
-	SpiSend(nrf,  clearIrq, 			sizeof(clearIrq) 			);
+	SpiSend(nrf,	DisableAutoAck, sizeof(DisableAutoAck));
+	SpiSend(nrf,	RxPayloadSize, 	sizeof(RxPayloadSize)	);
+	SpiSend(nrf,	RxPipe, 				sizeof(RxPipe)				);
+	SpiSend(nrf,	RxTxAdressSize,	sizeof(RxTxAdressSize));
+	SpiSend(nrf,	RxAdressP0,   	sizeof(RxAdressP0)		);
+	SpiSend(nrf,	TxAdress,   		sizeof(TxAdress)			);
+	SpiSend(nrf,	RfChanel, 			sizeof(RfChanel)			);
+	SpiSend(nrf,	RfParameter, 		sizeof(RfParameter)		);
+	SpiSend(nrf,	&FlushRxFifo, 	1											);
+	SpiSend(nrf,	&FlushTxFifo, 	1											);
+	SpiSend(nrf,	ReceiveMode, 	  sizeof(ReceiveMode)	  );
+	SpiSend(nrf,  ClearIrqFlag, 	sizeof(ClearIrqFlag) 	);
 	CeDigitalWrite(nrf, HIGH);
 }
 
@@ -413,10 +406,6 @@ static uint8_t DataTransmit[BYTES_PER_FRAME + 1];
 void NRF_SendNewState(uint8_t DataState)
 {  
   volatile uint16_t i,j;
-
-  uint8_t transmitMode[2] = {W_REGISTER | CONFIG, 0x52};
-  uint8_t clearIrqFlag[2] = {W_REGISTER | STATUS, 0x60};
-  uint8_t flushTxFifo		 	= FLUSH_TX;
   
   ExtiInterruptEnable(LOW);
   
@@ -433,13 +422,13 @@ void NRF_SendNewState(uint8_t DataState)
   
   CeDigitalWrite(&nrf1, LOW);
   
-  SpiSend(&nrf1, transmitMode, sizeof(transmitMode));
-  SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
+  SpiSend(&nrf1, TransmitMode, sizeof(TransmitMode));
+  SpiSend(&nrf1, ClearIrqFlag, sizeof(ClearIrqFlag));
     
   for(i=1; i < 75; i++)
   {
-    SpiSend(&nrf1, &flushTxFifo, 1);
-    SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
+    SpiSend(&nrf1, &FlushTxFifo, 1);
+    SpiSend(&nrf1, ClearIrqFlag, sizeof(ClearIrqFlag));
     
     SpiSend(&nrf1,	DataTransmit, sizeof(DataTransmit));
     CeDigitalWrite(&nrf1, HIGH);
@@ -450,8 +439,8 @@ void NRF_SendNewState(uint8_t DataState)
       __nop();
   }
   
-   SpiSend(&nrf1, &flushTxFifo, 1);
-   SpiSend(&nrf1, clearIrqFlag, sizeof(clearIrqFlag));
+   SpiSend(&nrf1, &FlushTxFifo, 1);
+   SpiSend(&nrf1, ClearIrqFlag, sizeof(ClearIrqFlag));
   
   CeDigitalWrite(&nrf1, LOW);
   RegisterInit(&nrf1);
@@ -465,9 +454,9 @@ void NRF_SendNewState(uint8_t DataState)
 // **************************************************************
 void NRF_Test(const NRF_Conf * nrf)
 {
-	uint8_t rxAdressP0[4] = {R_REGISTER | RX_ADDR_P0, 0x00, 0x00, 0x00};
+	uint8_t RxAdressP0[4] = {R_REGISTER | RX_ADDR_P0, 0x00, 0x00, 0x00};
  	// Read RX ADDR P0
-	SpiSend(nrf, rxAdressP0, sizeof(rxAdressP0)); 
+	SpiSend(nrf, RxAdressP0, sizeof(RxAdressP0)); 
 	
 	// Send the commande : read buffer
 	SpiSendThenDma(nrf, &Receive, 1 );

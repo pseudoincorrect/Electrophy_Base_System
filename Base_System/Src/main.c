@@ -146,12 +146,10 @@ static void ChangeState(void)
       {
         EtaIndex = Board_GetEtaIndex();
         NRF_SendNewState(EtaIndex + 100);
-        //NRF_SendNewState(0 + 100);
       }
       else
         NRF_SendNewState((uint8_t) State);      
       ElectrophyData_Reset(Output_device, State, EtaIndex);
-      //ElectrophyData_Reset(Output_device, State, 0);
       DAC_SetNewState(State); 
       Board_Leds(State, Output_device);  
       break;
@@ -175,9 +173,7 @@ static void ChangeState(void)
         Board_Leds(NO_LED, Output_device);
         EtaIndex = Board_GetEtaIndex();
         NRF_SendNewState(EtaIndex + 100);
-        //NRF_SendNewState(0 + 100);
         ElectrophyData_Reset(Output_device, State, EtaIndex);
-        //ElectrophyData_Reset(Output_device, State, 0);
         Board_Leds(State, Output_device);
       }
       break;
