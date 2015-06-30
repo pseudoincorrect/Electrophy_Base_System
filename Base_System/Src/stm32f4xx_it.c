@@ -41,6 +41,7 @@
 /* External variables --------------------------------------------------------*/
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+static uint32_t It_TickCount;
 
 /******************************************************************************/
 /*            Cortex-M4 Processor Interruption and Exception Handlers         */ 
@@ -66,9 +67,10 @@ void OTG_FS_WKUP_IRQHandler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+  It_TickCount++;
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
+  
   HAL_SYSTICK_IRQHandler();
   /* USER CODE BEGIN SysTick_IRQn 1 */
 
@@ -90,6 +92,9 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+uint32_t It_getTicks(void)
+{
+  return  It_TickCount;
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

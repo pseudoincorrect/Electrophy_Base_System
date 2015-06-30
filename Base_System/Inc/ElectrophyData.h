@@ -7,10 +7,6 @@
 #include "CommonInclude.h"
 #include "FBAR.h"
 
-/**************************************************************/
-//					Enum
-/**************************************************************/
-typedef enum{Dac, Usb} Output_device_t;
 
 /**************************************************************/
 //					Structures
@@ -24,7 +20,7 @@ typedef struct
 	uint16_t	ReadIndex;
 	uint16_t	WriteIndex;
 	
-}ElectrophyData_NRF;
+}ElectrophyData_NRF;                          
 
 // handler of the buffer and its pointers for the USB buffer
 typedef struct
@@ -71,7 +67,7 @@ typedef struct
 /**************************************************************/
 
 // Initialize the buffers and its pointers
-void ElectrophyData_Init(Output_device_t  Output_dev);
+void ElectrophyData_Init(uint16_t EtaIndex);
 
 // function called to manage the NRF buffer
 uint16_t ElectrophyData_Checkfill_NRF(void);
@@ -90,7 +86,10 @@ uint16_t * ElectrophyData_Read_DAC(void);
 
 //process function to decompress datas to output buffer (USB or DAC)
 uint8_t  ElectrophyData_Process(void);
-	
+
+// Reset the buffer with the new setting  
+void ElectrophyData_Reset(Output_device_t Output, DataStateTypeDef State, uint16_t eta);
+
 #endif
 
 

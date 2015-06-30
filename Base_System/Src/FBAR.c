@@ -12,9 +12,10 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-volatile uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE] = {0};
-volatile uint16_t etaAdd[CUT_VAL_SIZE]={0};
-volatile uint16_t etaSous[CUT_VAL_SIZE]={0};
+static uint16_t Eta;
+static uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE + 1] = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range line 145
+static uint16_t etaAdd[CUT_VAL_SIZE]={0};
+static uint16_t etaSous[CUT_VAL_SIZE]={0};
 
 // *************************************************************************
 // *************************************************************************
@@ -41,11 +42,14 @@ etaSous [0] = ETA/3			[1] =	ETA/2			[2] =	ETA/1
 /**************************************************************/
 //					FBAR_Initialize
 /**************************************************************/
-void FBAR_Initialize(void)
+void FBAR_Initialize(uint16_t EtaIndex)
 {
 	uint16_t i,j,range, delta;
 	
+  Eta = EtaIndex * 50;    // 1000 <= eta <= 5000
+  
 	range = 65535;
+  
 	delta = range / (CUT_VAL_SIZE + 1);
 	
 	for(i=0; i < CHANNEL_SIZE; i++)
@@ -54,18 +58,17 @@ void FBAR_Initialize(void)
 	
 	for (i=0; i < CUT_VAL_SIZE; i++)
 	{
-		etaSous[i] = ETA / (i+1);
-		etaAdd[i]  = ETA / (CUT_VAL_SIZE-i);
+		etaSous[i] = Eta / (i+1);
+		etaAdd[i]  = Eta / (CUT_VAL_SIZE-i);
 	}
 }
-
 
 /**************************************************************/
 //					FBAR_Reinitialize
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	uint16_t i,j, value, delta;
+	uint16_t i, j, value, delta;
 	
 	#pragma unroll_completely 
 	for(i=0; i < CHANNEL_SIZE; i++)
@@ -89,7 +92,8 @@ volatile uint16_t winner;
 void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 {
 	uint16_t i, j;
-	
+	int32_t tempValue;
+  
 	// loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
@@ -98,14 +102,26 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 		#pragma unroll_completely 
 		for(j=0; j < CHANNEL_SIZE; j++)
 		{
-			winner = *bufferFrom++;
+			winner = (*bufferFrom) & 0x07;
+      bufferFrom++;
       
-      if (!winner)
-          *bufferTo++ = (( cutValue[j][0] - ((cutValue[j][1]-cutValue[j][0])/2) ) >> 1)  ;
+     if (!winner)
+      { 
+        tempValue  = cutValue[j][0]-(cutValue[j][1]-cutValue[j][0])/2;
+        if ( tempValue < 0)
+          tempValue = cutValue[j][0];
+        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
+      }      
       else if (winner == CUT_VAL_SIZE)
-          *bufferTo++ = ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)) >> 1);
+      {
+        tempValue =   ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
+        if (tempValue > 65535 )
+          tempValue = cutValue[j][CUT_VAL_SIZE-1];
+        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
+          
+      }  
       else
-          *bufferTo++ = (cutValue[j][winner] + cutValue[j][winner-1]) >> 2; 
+        *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
 			// set the new the cut values
 			FBAR_AdaptCutValues(j, winner);
 		}
@@ -126,8 +142,8 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (!i)
 			{
-				if (cutValue[channel][0] >  ETA) 
-					cutValue[channel][i] -= etaSous[i];	
+				if (cutValue[channel][0] >  Eta) 
+					cutValue[channel][0] -= Eta;
 			}
 			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i])
 				cutValue[channel][i] -= etaSous[i];	
@@ -136,8 +152,8 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (i == CUT_VAL_SIZE-1) 
 			{
-				if (cutValue[channel][CUT_VAL_SIZE-1] <  65500 - ETA) 
-					cutValue[channel][i] += etaAdd[i];
+        if (cutValue[channel][CUT_VAL_SIZE-1] <  65535 - Eta) 
+					cutValue[channel][CUT_VAL_SIZE-1] += Eta;
 			}
 			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i])
 				cutValue[channel][i] += etaAdd[i];
@@ -148,22 +164,63 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 /**************************************************************/
 //					FBAR_Assemble
 /**************************************************************/
-void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo)
+void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef state)
 {
 	uint16_t i,j;
 	
-	#pragma unroll_completely 
-	for(i=0; i < NRF_CHANNEL_FRAME; i++)
-	{
-		#pragma unroll_completely 
-		for(j=0; j < (CHANNEL_SIZE/2); j++)
-		{
-			*bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1);
-			bufferTo++;
-			bufferFrom += 2;
-		}
-		bufferTo += 4;
-	}
+  switch (state)
+  {      
+    case __4ch_16bit_20kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < (CHANNEL_SIZE/2); j++)
+        {
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          bufferTo++;
+          bufferFrom += 2;
+        }
+        #pragma unroll_completely 
+        for(j=0; j < (CHANNEL_SIZE/2); j++)
+        {
+          *bufferTo = 0;
+          bufferTo++;
+        }
+      }
+      break;
+    
+    case __8ch_16bit_10kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME/2; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < CHANNEL_SIZE; j++)
+        {
+          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          bufferTo++;
+          bufferFrom += 2;
+        }
+      }
+      break;
+    
+    case __8ch_8bit__20kHz_NC__ :
+      #pragma unroll_completely 
+      for(i=0; i < NRF_CHANNEL_FRAME; i++)
+      {
+        #pragma unroll_completely 
+        for(j=0; j < CHANNEL_SIZE; j++)
+        {
+          *bufferTo = ((*bufferFrom) << 7) & 0x7FFF;
+          bufferTo++;
+          bufferFrom++;
+        }
+      }
+      break;
+      
+    default :
+      break;
+  }
 }
 
 

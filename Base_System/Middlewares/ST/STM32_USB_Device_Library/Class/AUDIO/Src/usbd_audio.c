@@ -425,14 +425,12 @@ static uint8_t  *USBD_AUDIO_GetCfgDesc (uint16_t *length)
   return USBD_AUDIO_CfgDesc;
 }
 
-//static uint16_t Empty[300] = {0};
+static uint16_t Empty[300] = {0};
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
 /*************************************            DATA IN           ****************************************************/
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
-extern ElectrophyData_USB ElectrophyDataUSB;
-//uint16_t * readPt;
 /**
   * @brief  USBD_AUDIO_DataIn
   *         handle data IN Stage
@@ -441,24 +439,13 @@ extern ElectrophyData_USB ElectrophyDataUSB;
   * @retval status
   */
 static uint8_t  USBD_AUDIO_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
-{		
-  
-	if (ElectrophyData_Checkfill_USB())
-  { 
+{		  
+	if (ElectrophyData_Checkfill_USB()) 
     USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)ElectrophyData_Read_USB(), 256);
-  }
   else
-  { 
-    while(!ElectrophyData_Checkfill_USB() && !ElectrophyData_Checkfill_NRF())
-    {  
-      ElectrophyData_Process();	
-    }  
-    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)ElectrophyData_Read_USB(), 256);
-  }
-  
+    USBD_LL_Transmit(pdev, AUDIO_IN_EP, (uint8_t*)Empty, 0); 
 	return USBD_OK;
-}                                                                         
-	// a buffer of SIZE_BUFFER usb frames 
+}                                                                          
 
 /**
   * @brief  USBD_AUDIO_EP0_RxReady
