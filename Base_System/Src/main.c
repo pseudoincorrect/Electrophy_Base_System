@@ -26,7 +26,7 @@ static DataStateTypeDef NextState   (void);
 // *************************************************************************
 // *************************************************************************
 const DataStateTypeDef stateSystem[4] = { 
-  __8ch_16bit_20kHz__C__, 
+  __8ch_3bit__20kHz__C__, 
   __4ch_16bit_20kHz_NC__, 
   __8ch_16bit_10kHz_NC__, 
   __8ch_8bit__20kHz_NC__
@@ -142,7 +142,7 @@ static void ChangeState(void)
     case (FLAG_STATE) :
     {
       State = NextState();  
-      if (State == __8ch_16bit_20kHz__C__)
+      if (State == __8ch_3bit__20kHz__C__)
       {
         EtaIndex = Board_GetEtaIndex();
         NRF_SendNewState(EtaIndex + 100);
@@ -168,7 +168,7 @@ static void ChangeState(void)
     //Change and send the Eta used by FBAR
     case (FLAG_ETA) :
     {
-      if (State == __8ch_16bit_20kHz__C__)
+      if (State == __8ch_3bit__20kHz__C__)
       {
         Board_Leds(NO_LED, Output_device);
         EtaIndex = Board_GetEtaIndex();

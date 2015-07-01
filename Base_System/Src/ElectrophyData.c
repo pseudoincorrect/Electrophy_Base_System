@@ -250,7 +250,7 @@ uint8_t ElectrophyData_Process(void)
 		uint8_t *  FbarReadPtr, * Assemble8Ptr;
 		uint16_t * FbarWritePtr,* Assemble16Ptr;
        
-		if (ElectrophyData_State == __8ch_16bit_20kHz__C__)  // if compress
+		if (ElectrophyData_State == __8ch_3bit__20kHz__C__)  // if compress
 		{	
 			FbarReadPtr = ElectrophyData_Read_NRF();
 			

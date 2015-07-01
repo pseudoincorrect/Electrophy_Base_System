@@ -161,12 +161,13 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 	}
 }
 
+static uint16_t PreviousValue[CHANNEL_SIZE] = {0};
 /**************************************************************/
 //					FBAR_Assemble
 /**************************************************************/
 void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef state)
 {
-	uint16_t i,j;
+	uint16_t i,j, CurrentValue;
 	
   switch (state)
   {      
@@ -177,7 +178,25 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < (CHANNEL_SIZE/2); j++)
         {
-          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          CurrentValue = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          
+          if (CurrentValue > PreviousValue[j] + SECU)
+          {
+            *bufferTo = PreviousValue[j];
+            PreviousValue[j] = PreviousValue[j] + SECU;
+            
+          }
+          else if (CurrentValue < PreviousValue[j] - SECU) 
+          {
+            *bufferTo = PreviousValue[j];
+            PreviousValue[j] = PreviousValue[j] - SECU;
+          }
+          else
+          {
+            *bufferTo = CurrentValue;
+            PreviousValue[j] = CurrentValue;
+          }
+          
           bufferTo++;
           bufferFrom += 2;
         }
@@ -197,7 +216,25 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < CHANNEL_SIZE; j++)
         {
-          *bufferTo = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          CurrentValue = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
+          
+          if (CurrentValue > PreviousValue[j] + SECU)
+          {
+            *bufferTo = PreviousValue[j];
+            PreviousValue[j] = PreviousValue[j] + SECU;
+            
+          }
+          else if (CurrentValue < PreviousValue[j] - SECU) 
+          {
+            *bufferTo = PreviousValue[j];
+            PreviousValue[j] = PreviousValue[j] - SECU;
+          }
+          else
+          {
+            *bufferTo = CurrentValue;
+            PreviousValue[j] = CurrentValue;
+          }
+       
           bufferTo++;
           bufferFrom += 2;
         }
@@ -211,7 +248,25 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         #pragma unroll_completely 
         for(j=0; j < CHANNEL_SIZE; j++)
         {
-          *bufferTo = ((*bufferFrom) << 7) & 0x7FFF;
+          CurrentValue = ((*bufferFrom) << 7) & 0x7FFF;
+          *bufferTo = CurrentValue;
+//          if (CurrentValue > PreviousValue[j] + SECU)
+//          {
+//            *bufferTo = PreviousValue[j];
+//            PreviousValue[j] = PreviousValue[j] + SECU;
+//            
+//          }
+//          else if (CurrentValue < PreviousValue[j] - SECU) 
+//          {
+//            *bufferTo = PreviousValue[j];
+//            PreviousValue[j] = PreviousValue[j] - SECU;
+//          }
+//          else
+//          {
+//            *bufferTo = CurrentValue;
+//            PreviousValue[j] = CurrentValue;
+//          }
+          
           bufferTo++;
           bufferFrom++;
         }

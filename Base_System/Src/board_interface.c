@@ -242,7 +242,7 @@ void Board_Leds(uint8_t  state, Output_device_t output)
 {
 	switch(state)
 	{
-		case ((uint8_t) __8ch_16bit_20kHz__C__) :
+		case ((uint8_t) __8ch_3bit__20kHz__C__) :
 			if (output == Usb)
         Leds(1,0,0,0);
       else 
@@ -348,7 +348,7 @@ void Board_Interrupt(uint8_t input, DataStateTypeDef CurrentState)
   if (input) 
   {  
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-    if (CurrentState == __8ch_16bit_20kHz__C__)
+    if (CurrentState == __8ch_3bit__20kHz__C__)
       HAL_NVIC_EnableIRQ(TIM3_IRQn);
   }
   else
