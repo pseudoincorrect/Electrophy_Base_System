@@ -16,7 +16,8 @@ static uint8_t SpiSendThenDma(const NRF_Conf * nrf, uint8_t * data, uint8_t leng
 static void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup);
 static void RegisterInit(const NRF_Conf * nrf);
-  
+static void Process_Test (uint8_t * ptrBuffer);
+
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
@@ -42,15 +43,16 @@ static uint8_t RfParameter[2] 		= {W_REGISTER | RF_SETUP  , 0x0E};    // set RF 
 static uint8_t ClearIrqFlag[2]    = {W_REGISTER | STATUS    , 0x70}; // clear IRQ                         0b 1110 0000
 
 //config without CRC
-//static uint8_t ReceiveMode[2] 		= {W_REGISTER | CONFIG		, 0x33};   // set Receive mode                0b 0011 0011 
-//static uint8_t TransmitMode[2]    = {W_REGISTER | CONFIG    , 0x52};  // set Transmit mode                0b 0101 0010
+static uint8_t ReceiveMode[2] 		= {W_REGISTER | CONFIG		, 0x33};   // set Receive mode                0b 0011 0011 
+static uint8_t TransmitMode[2]    = {W_REGISTER | CONFIG    , 0x52};  // set Transmit mode                0b 0101 0010
 //config with CRC
-static uint8_t ReceiveModeCRC[2] 	= {W_REGISTER | CONFIG		, 0x3B};   // set Receive mode                0b 0011 0011 
-static uint8_t TransmitModeCRC[2] = {W_REGISTER | CONFIG    , 0x5A};  // set Transmit mode                0b 0101 0010
+//static uint8_t ReceiveMode[2] 	= {W_REGISTER | CONFIG		, 0x3B};   // set Receive mode                0b 0011 0011 
+//static uint8_t TransmitMode[2] = {W_REGISTER | CONFIG    , 0x5A};  // set Transmit mode                0b 0101 0010
 
 static uint8_t FlushRxFifo 				= FLUSH_RX;                       // flush Rx fifo
 static uint8_t FlushTxFifo				= FLUSH_TX;                      // flush Tx fifo
-  
+
+
 // *************************************************************************
 // *************************************************************************
 // 						Const variables	
@@ -256,6 +258,7 @@ static void DmaInit(const NRF_Conf * nrf)
 	nrf->DMA->HIFCR  |= (nrf->DMA_MASK_IRQ_TX | nrf->DMA_MASK_IRQ_RX); 
 }
 
+static uint8_t BufferTest[BYTES_PER_FRAME];
 static uint8_t * NrfWritePtr;
 static uint8_t Receive = R_RX_PAYLOAD;
 static uint8_t Dummy 	 = 0x00;
@@ -267,7 +270,9 @@ void ExtiHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
   TRANSFERT_FLAG = 1;
   
   //Get the adresse in the buffer where to send the datas
-	NrfWritePtr = ElectrophyData_Write_NRF();
+	//NrfWritePtr = ElectrophyData_Write_NRF();
+  
+  NrfWritePtr = BufferTest;
   
 	//load the destination adress in the DMA controler for the next transfert
 	nrf->DMA_RX_INSTANCE->M0AR = (uint32_t) (NrfWritePtr+1);
@@ -316,7 +321,83 @@ void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
 	
   TRANSFERT_FLAG = 0;
 	FLAG_PACKET = 0;
+  
+  Process_Test(NrfWritePtr);
 }		
+
+volatile uint16_t Loss, Error, WrongFrame; 
+static uint16_t CurrentLoss, CurrentError, CurrentWrongFrame, PreviousIndice = 0;
+volatile static uint8_t * ptrTmp;
+static uint32_t Count;
+// **************************************************************
+// 					Process_Test 
+// **************************************************************
+static void Process_Test(uint8_t * ptrBuffer)
+{
+  uint8_t i = 0;
+  
+  ptrTmp = ptrBuffer;
+  
+  // check if we receive datas frome some other device
+  if ((ptrBuffer[0] != 0x0E && ptrBuffer[0] != 0xE0) || (ptrBuffer[1] != 0x0F && ptrBuffer[1] != 0xF0))
+  {
+    CurrentWrongFrame++;
+  }
+  else
+  {
+    // check for corrupted datas
+    for(i=0; i < BYTES_PER_FRAME; i++)
+    {
+      if ((i == 0) && (ptrBuffer[i] != 0x0E) && (ptrBuffer[i] != 0xE0))
+          CurrentError++;
+      
+      __nop();
+      
+      if ((i == 1) && (ptrBuffer[i] != 0x0F) && (ptrBuffer[i] != 0xF0))
+          CurrentError++;
+      
+      __nop();
+      
+      if ((i == 2) && (ptrBuffer[i] >= NUMBER_OF_PACKETS))
+          CurrentError++;
+      
+      __nop();
+      
+      if ((i >= 3) && (ptrTmp[i] != (i + 100)))
+          CurrentError++;
+    }
+    
+    // check if we miss one or several packets
+    if((ptrBuffer[2] != PreviousIndice+1) && (ptrBuffer[2] != 0))
+      CurrentLoss++;;
+  }
+  
+  // update the current Control frame index 
+  if(ptrBuffer[2] < NUMBER_OF_PACKETS)
+    PreviousIndice = ptrBuffer[2];
+  else
+  {
+    PreviousIndice++;
+    if(PreviousIndice >= NUMBER_OF_PACKETS)     
+      PreviousIndice = 0;
+  }
+  
+  
+  //reset and update loss statistics after the reception of 100 frames
+  Count++;
+  if (Count >= 50000)
+  {
+    Loss       = CurrentLoss;
+    Error      = CurrentError;
+    WrongFrame = CurrentWrongFrame;
+    
+    CurrentLoss       = 0;
+    CurrentError      = 0;
+    CurrentWrongFrame = 0;
+    Count             = 0;
+  }
+}
+
 
 // **************************************************************
 // 					CeDigitalWrite 
@@ -397,7 +478,7 @@ static void RegisterInit(const NRF_Conf * nrf)
 	SpiSend(nrf,	RfParameter, 		sizeof(RfParameter)		);
 	SpiSend(nrf,	&FlushRxFifo, 	1											);
 	SpiSend(nrf,	&FlushTxFifo, 	1											);
-	SpiSend(nrf,	ReceiveModeCRC, 	  sizeof(ReceiveModeCRC)	  );
+	SpiSend(nrf,	ReceiveMode, 	  sizeof(ReceiveMode)	  );
 	SpiSend(nrf,  ClearIrqFlag, 	sizeof(ClearIrqFlag) 	);
 	CeDigitalWrite(nrf, HIGH);
 }
@@ -426,7 +507,7 @@ void NRF_SendNewState(uint8_t DataState)
   
   CeDigitalWrite(&nrf1, LOW);
   
-  SpiSend(&nrf1, TransmitModeCRC, sizeof(TransmitModeCRC));
+  SpiSend(&nrf1, TransmitMode, sizeof(TransmitMode));
   SpiSend(&nrf1, ClearIrqFlag, sizeof(ClearIrqFlag));
     
   for(i=1; i < 75; i++)
