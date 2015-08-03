@@ -26,8 +26,8 @@ static DataStateTypeDef NextState   (void);
 // 						Global Variables	
 // *************************************************************************
 // *************************************************************************
-extern volatile uint16_t Loss, Error, WrongFrame; 
-
+extern volatile float Loss, Error, WrongFrame, Count; 
+extern volatile float SNR;
 
 // *************************************************************************
 // *************************************************************************

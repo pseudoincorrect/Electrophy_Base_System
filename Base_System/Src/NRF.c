@@ -43,11 +43,11 @@ static uint8_t RfParameter[2] 		= {W_REGISTER | RF_SETUP  , 0x0E};    // set RF 
 static uint8_t ClearIrqFlag[2]    = {W_REGISTER | STATUS    , 0x70}; // clear IRQ                         0b 1110 0000
 
 //config without CRC
-static uint8_t ReceiveMode[2] 		= {W_REGISTER | CONFIG		, 0x33};   // set Receive mode                0b 0011 0011 
-static uint8_t TransmitMode[2]    = {W_REGISTER | CONFIG    , 0x52};  // set Transmit mode                0b 0101 0010
+//static uint8_t ReceiveMode[2] 		= {W_REGISTER | CONFIG		, 0x33};   // set Receive mode                0b 0011 0011 
+//static uint8_t TransmitMode[2]    = {W_REGISTER | CONFIG    , 0x52};  // set Transmit mode                0b 0101 0010
 //config with CRC
-//static uint8_t ReceiveMode[2] 	= {W_REGISTER | CONFIG		, 0x3B};   // set Receive mode                0b 0011 0011 
-//static uint8_t TransmitMode[2] = {W_REGISTER | CONFIG    , 0x5A};  // set Transmit mode                0b 0101 0010
+static uint8_t ReceiveMode[2] 	= {W_REGISTER | CONFIG		, 0x3B};   // set Receive mode                0b 0011 0011 
+static uint8_t TransmitMode[2] = {W_REGISTER | CONFIG    , 0x5A};  // set Transmit mode                0b 0101 0010
 
 static uint8_t FlushRxFifo 				= FLUSH_RX;                       // flush Rx fifo
 static uint8_t FlushTxFifo				= FLUSH_TX;                      // flush Tx fifo
@@ -325,10 +325,9 @@ void DmaHandler(const NRF_Conf * nrf, const NRF_Conf * nrfBackup)
   Process_Test(NrfWritePtr);
 }		
 
-volatile uint16_t Loss, Error, WrongFrame; 
+volatile float Loss, Error, WrongFrame, Count, TotalCount = 20000; 
+volatile float SNR;
 static uint16_t CurrentLoss, CurrentError, CurrentWrongFrame, PreviousIndice = 0;
-volatile static uint8_t * ptrTmp;
-static uint32_t Count;
 // **************************************************************
 // 					Process_Test 
 // **************************************************************
@@ -336,36 +335,21 @@ static void Process_Test(uint8_t * ptrBuffer)
 {
   uint8_t i = 0;
   
-  ptrTmp = ptrBuffer;
   
   // check if we receive datas frome some other device
   if ((ptrBuffer[0] != 0x0E && ptrBuffer[0] != 0xE0) || (ptrBuffer[1] != 0x0F && ptrBuffer[1] != 0xF0))
-  {
     CurrentWrongFrame++;
-  }
   else
-  {
-    // check for corrupted datas
-    for(i=0; i < BYTES_PER_FRAME; i++)
-    {
-      if ((i == 0) && (ptrBuffer[i] != 0x0E) && (ptrBuffer[i] != 0xE0))
-          CurrentError++;
-      
-      __nop();
-      
-      if ((i == 1) && (ptrBuffer[i] != 0x0F) && (ptrBuffer[i] != 0xF0))
-          CurrentError++;
-      
-      __nop();
-      
-      if ((i == 2) && (ptrBuffer[i] >= NUMBER_OF_PACKETS))
-          CurrentError++;
-      
-      __nop();
-      
-      if ((i >= 3) && (ptrTmp[i] != (i + 100)))
-          CurrentError++;
-    }
+  { 
+    // check for corrupted datas    
+    if(((ptrBuffer[0] != 0x0E) && (ptrBuffer[0] != 0xE0))
+    || ((ptrBuffer[1] != 0x0F) && (ptrBuffer[1] != 0xF0))
+    ||  (ptrBuffer[2] >= NUMBER_OF_PACKETS))
+      CurrentError++;
+     
+    for(i=3; i < BYTES_PER_FRAME; i++)   
+      if ((i >= 3) && (ptrBuffer[i] != (i + 100)))
+        CurrentError++;    
     
     // check if we miss one or several packets
     if((ptrBuffer[2] != PreviousIndice+1) && (ptrBuffer[2] != 0))
@@ -382,14 +366,14 @@ static void Process_Test(uint8_t * ptrBuffer)
       PreviousIndice = 0;
   }
   
-  
   //reset and update loss statistics after the reception of 100 frames
   Count++;
-  if (Count >= 50000)
+  if (Count >= TotalCount)
   {
     Loss       = CurrentLoss;
     Error      = CurrentError;
     WrongFrame = CurrentWrongFrame;
+    SNR        = (Loss / TotalCount) * 100; 
     
     CurrentLoss       = 0;
     CurrentError      = 0;
