@@ -25,7 +25,7 @@
 #define DAC_FRAME	    	  4
 #define NRF_CHANNEL_FRAME	4 // 32/8 = 4
 
-#define NBIT 				 	     3								 // resolution of the compression
+#define NBIT 				 	     4                 // resolution of the compression
 #define POW_2_NBIT  	    (1 << NBIT) 			// 2^NBIT
 #define CUT_VAL_SIZE 	    (POW_2_NBIT - 1) // number of cut value
 #define ETA_INDEX_INIT    50					// adaptation parameter

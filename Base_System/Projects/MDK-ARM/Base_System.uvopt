@@ -198,6 +198,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>State</ItemText>
         </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>EtaIndex * 50,0x0A</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
