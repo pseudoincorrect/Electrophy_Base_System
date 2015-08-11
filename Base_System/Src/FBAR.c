@@ -14,8 +14,8 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner);
 // *************************************************************************
 static uint16_t Eta;
 static uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE + 1] = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range line 145
-static uint16_t etaAdd[CUT_VAL_SIZE]={0};
-static uint16_t etaSous[CUT_VAL_SIZE]={0};
+static uint16_t etaAdd[CUT_VAL_SIZE + 1] ={0};  // (CUT_VAL_SIZE + 1) is for the case NBIT == 4
+static uint16_t etaSous[CUT_VAL_SIZE + 1]={0}; //  (CUT_VAL_SIZE + 1) is for the case NBIT == 4
 
 // *************************************************************************
 // *************************************************************************
@@ -34,87 +34,148 @@ etaAdd  [0] = ETA/1			[1] =	ETA/2			[2] =	ETA/3
 etaSous [0] = ETA/3			[1] =	ETA/2			[2] =	ETA/1	
 */
 
-// *************************************************************************
-// *************************************************************************
+//*************************************************************************
+//*************************************************************************
 // 										Function definitions																 
-// *************************************************************************
-// *************************************************************************	
+//*************************************************************************
+//*************************************************************************	
 /**************************************************************/
 //					FBAR_Initialize
 /**************************************************************/
 void FBAR_Initialize(uint16_t EtaIndex)
 {
-	uint16_t i,j,range, delta;
+	volatile  uint16_t i,j,range, delta;
 	
-  Eta = EtaIndex * 50;    // 1000 <= eta <= 5000
-  
+  Eta = EtaIndex * 50;
 	range = 65535;
   
 	delta = range / (CUT_VAL_SIZE + 1);
 	
 	for(i=0; i < CHANNEL_SIZE; i++)
-		for(j=0; j < CUT_VAL_SIZE; j++)
-			cutValue[i][j] = (j+1) * delta;
-	
+	{
+    for(j=0; j < CUT_VAL_SIZE; j++)
+		{
+      #if ((NBIT == 1) || (NBIT == 4))
+      cutValue[i][0] = 30000;
+      #else
+      cutValue[i][j] = (j+1) * delta;
+      #endif
+    }
+  }  
+  #if ((NBIT == 2) || (NBIT == 3))    
 	for (i=0; i < CUT_VAL_SIZE; i++)
 	{
 		etaSous[i] = Eta / (i+1);
 		etaAdd[i]  = Eta / (CUT_VAL_SIZE-i);
 	}
+  #elif (NBIT == 4)
+  for (i=0; i < 4; i++)
+		etaAdd[i] = (Eta / 3) * i;   
+  #endif
+  __nop();
 }
 
+uint8_t reinitializeBit = 0;
 /**************************************************************/
 //					FBAR_Reinitialize
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	uint16_t i, j, value, delta;
+	volatile uint16_t i, j, value, delta;
 	
-	#pragma unroll_completely 
+  #pragma unroll_completely 
 	for(i=0; i < CHANNEL_SIZE; i++)
 	{
-		value = ((*bufferFrom) << 8) + (*bufferFrom+1); 
-
-		delta = 2000 / (CUT_VAL_SIZE - 1); //(cutValue[i][CUT_VAL_SIZE - 1]-cutValue[i][0]) / (CUT_VAL_SIZE - 1)
-				
-		#pragma unroll_completely 
+		value = ((*bufferFrom) << 8) + (*(bufferFrom+1)); 
+	
+    #if (!((NBIT == 1) || (NBIT == 4)))
+		// quand je prend un delta non constant, le système à la réception ne fonctionne pas très bien
+		delta = (cutValue[i][CUT_VAL_SIZE - 1]-cutValue[i][0]) / (CUT_VAL_SIZE - 1);      
+    #endif 	
+	
+    #pragma unroll_completely 
 		for(j=0; j < CUT_VAL_SIZE; j++)
-			cutValue[i][j] = value + (j-3) * delta; 
-		
+    {
+      #if ((NBIT == 1) || (NBIT == 4))
+      cutValue[i][0] = value;
+      #else
+			cutValue[i][j] = value + (j-NBIT) * delta;
+      #endif 
+		}
 		bufferFrom+= 2;
 	}
+  reinitializeBit = 1;
 }
 
-volatile uint16_t winner;
+volatile uint8_t winner;
 /**************************************************************/
 //					FBAR_Uncompress
 /**************************************************************/
 void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 {
 	uint16_t i, j;
-	int32_t tempValue;
+	volatile int32_t tempValue;
   
 	// loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
-	{                         		
-		// loop on all the CHANNEL_SIZE channels
-		#pragma unroll_completely 
-		for(j=0; j < CHANNEL_SIZE; j++)
+	{ 
+    #pragma unroll_completely 
+		for(j=0; j < CHANNEL_SIZE; j++)  // loop on all the CHANNEL_SIZE channels
 		{
 			winner = (*bufferFrom) & 0x07;
       bufferFrom++;
       
-     if (!winner)
+      //************************************************** N == 1
+      #if (NBIT == 1)
+      tempValue = cutValue[j][0]; 
+          
+      if (winner)
       { 
-        tempValue  = cutValue[j][0]-(cutValue[j][1]-cutValue[j][0])/2;
+       if (cutValue[j][0] < 65535 - Eta)
+          cutValue[j][0] += Eta;
+      }      
+      else 
+      {
+        if (cutValue[j][0] > Eta)
+          cutValue[j][0] -= Eta;
+      }
+      
+      *bufferTo++ = ( tempValue >> 1) & 0x7FFF;
+      
+      //************************************************** N == 4
+      #elif (NBIT == 4)
+      
+      tempValue = cutValue[j][0];
+      
+      if (winner & 0x04)
+      {
+        if (cutValue[j][0] > Eta)
+          cutValue[j][0] -= etaAdd[(winner & 0x03)];
+      }
+      else
+      {
+        if (cutValue[j][0] < 65535 - Eta)
+          cutValue[j][0] += etaAdd[(winner & 0x03)];   
+      }
+      
+//      if (reinitializeBit)
+//        *bufferTo++ =  60000 ;
+//      else
+      *bufferTo++ = ( tempValue >> 1) & 0x7FFF; 
+      
+      //************************************************** N == 2 or 3
+      #elif ((NBIT == 2) || (NBIT == 3)) 
+      if (!winner)
+      { 
+        tempValue = cutValue[j][0]-(cutValue[j][1]-cutValue[j][0])/2;
         if ( tempValue < 0)
           tempValue = cutValue[j][0];
         *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
       }      
       else if (winner == CUT_VAL_SIZE)
       {
-        tempValue =   ((cutValue[j][CUT_VAL_SIZE-1] + ((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
+        tempValue = ((cutValue[j][CUT_VAL_SIZE-1] + Eta/2)); //((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
         if (tempValue > 65535 )
           tempValue = cutValue[j][CUT_VAL_SIZE-1];
         *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
@@ -122,9 +183,11 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
       }  
       else
         *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
-			// set the new the cut values
-			FBAR_AdaptCutValues(j, winner);
-		}
+      // set the new the cut values
+      FBAR_AdaptCutValues(j, winner);
+      #endif  
+		} 
+    reinitializeBit = 0;
 	}	
 }	
 	
@@ -179,23 +242,24 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         for(j=0; j < (CHANNEL_SIZE/2); j++)
         {
           CurrentValue = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
-          
-          if (CurrentValue > PreviousValue[j] + SECU)
-          {
-            *bufferTo = PreviousValue[j];
-            PreviousValue[j] = PreviousValue[j] + SECU;
-            
-          }
-          else if (CurrentValue < PreviousValue[j] - SECU) 
-          {
-            *bufferTo = PreviousValue[j];
-            PreviousValue[j] = PreviousValue[j] - SECU;
-          }
-          else
-          {
-            *bufferTo = CurrentValue;
-            PreviousValue[j] = CurrentValue;
-          }
+          *bufferTo = CurrentValue;
+//          
+//          if (CurrentValue > PreviousValue[j] + SECU)
+//          {
+//            *bufferTo = PreviousValue[j];
+//            PreviousValue[j] = PreviousValue[j] + SECU;
+//            
+//          }
+//          else if (CurrentValue < PreviousValue[j] - SECU) 
+//          {
+//            *bufferTo = PreviousValue[j];
+//            PreviousValue[j] = PreviousValue[j] - SECU;
+//          }
+//          else
+//          {
+//            *bufferTo = CurrentValue;
+//            PreviousValue[j] = CurrentValue;
+//          }
           
           bufferTo++;
           bufferFrom += 2;

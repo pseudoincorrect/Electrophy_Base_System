@@ -256,7 +256,7 @@ uint8_t ElectrophyData_Process(void)
 			
 			//if cutvalues reinitialisation balise
 			if (*FbarReadPtr == 0xFF && *(FbarReadPtr + 1) == 0xFF )
-        ;//FBAR_Reinitialize((FbarReadPtr + 2));		
+        FBAR_Reinitialize((FbarReadPtr + 2));		
 			// if no reinitialisation
 			else 
 			{
