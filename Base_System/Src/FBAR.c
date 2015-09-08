@@ -47,7 +47,7 @@ void FBAR_Initialize(uint16_t EtaIndex)
 	volatile  uint16_t i,j,range, delta;
 	
   Eta = EtaIndex * 50;
-	range = 65535;
+	range = 2000; //65535;
   
 	delta = range / (CUT_VAL_SIZE + 1);
 	
@@ -65,8 +65,8 @@ void FBAR_Initialize(uint16_t EtaIndex)
   #if ((NBIT == 2) || (NBIT == 3))    
 	for (i=0; i < CUT_VAL_SIZE; i++)
 	{
-		etaSous[i] = Eta / (i+1);
-		etaAdd[i]  = Eta / (CUT_VAL_SIZE-i);
+		etaSous[i] = Eta / (i + 1);
+		etaAdd[i]  = Eta / (CUT_VAL_SIZE - i);
 	}
   #elif (NBIT == 4)
   for (i=0; i < 4; i++)
@@ -81,7 +81,7 @@ uint8_t reinitializeBit = 0;
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	volatile uint16_t i, j, value, delta;
+	static volatile uint16_t i, j, value, delta;
 	
   #pragma unroll_completely 
 	for(i=0; i < CHANNEL_SIZE; i++)
@@ -93,15 +93,15 @@ void FBAR_Reinitialize(uint8_t * bufferFrom)
 		delta = (cutValue[i][CUT_VAL_SIZE - 1]-cutValue[i][0]) / (CUT_VAL_SIZE - 1);      
     #endif 	
 	
+    #if ((NBIT == 1) || (NBIT == 4))
+      cutValue[i][0] = value;
+    #else
+    
     #pragma unroll_completely 
 		for(j=0; j < CUT_VAL_SIZE; j++)
-    {
-      #if ((NBIT == 1) || (NBIT == 4))
-      cutValue[i][0] = value;
-      #else
-			cutValue[i][j] = value + (j-NBIT) * delta;
-      #endif 
-		}
+			cutValue[i][j] = value + (j-NBIT) * delta;  
+    #endif 
+    
 		bufferFrom+= 2;
 	}
   reinitializeBit = 1;
@@ -116,7 +116,7 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 	uint16_t i, j;
 	volatile int32_t tempValue;
   
-	// loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
+	//loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
 	{ 
@@ -166,25 +166,27 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
       
       //************************************************** N == 2 or 3
       #elif ((NBIT == 2) || (NBIT == 3)) 
+      
+      // set the new the cut values
+      FBAR_AdaptCutValues(j, winner);
+      
       if (!winner)
       { 
-        tempValue = cutValue[j][0]-(cutValue[j][1]-cutValue[j][0])/2;
-        if ( tempValue < 0)
+        //tempValue = cutValue[j][0] - Eta;
+        //if ( tempValue < 0)
           tempValue = cutValue[j][0];
         *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
       }      
       else if (winner == CUT_VAL_SIZE)
       {
-        tempValue = ((cutValue[j][CUT_VAL_SIZE-1] + Eta/2)); //((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
-        if (tempValue > 65535 )
+        //tempValue = cutValue[j][CUT_VAL_SIZE-1] + Eta; //((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
+       // if (tempValue > 65535 )
           tempValue = cutValue[j][CUT_VAL_SIZE-1];
-        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
-          
+        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;           
       }  
       else
         *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
-      // set the new the cut values
-      FBAR_AdaptCutValues(j, winner);
+   
       #endif  
 		} 
     reinitializeBit = 0;
