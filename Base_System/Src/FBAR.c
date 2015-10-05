@@ -1,21 +1,25 @@
 #include "FBAR.h"
 
+
 // *************************************************************************
 // *************************************************************************
 // 						static function declaration, see .h file	
 // *************************************************************************
 // *************************************************************************
 static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner);
-
 // *************************************************************************
 // *************************************************************************
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
 static uint16_t Eta;
-static uint16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE + 1] = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range line 145
+static uint16_t Beta  = 1;
 static uint16_t etaAdd[CUT_VAL_SIZE + 1] ={0};  // (CUT_VAL_SIZE + 1) is for the case NBIT == 4
 static uint16_t etaSous[CUT_VAL_SIZE + 1]={0}; //  (CUT_VAL_SIZE + 1) is for the case NBIT == 4
+static uint16_t Prediction[CHANNEL_SIZE]     = {0};
+static int16_t PredictorError  = {0};
+static int16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE + 1]     = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range
+static int16_t cutValueSave[CHANNEL_SIZE][CUT_VAL_SIZE + 1] = {0}; // (CUT_VAL_SIZE + 1) : we add 1 to avoid the warning out of range
 
 // *************************************************************************
 // *************************************************************************
@@ -44,154 +48,123 @@ etaSous [0] = ETA/3			[1] =	ETA/2			[2] =	ETA/1
 /**************************************************************/
 void FBAR_Initialize(uint16_t EtaIndex)
 {
-	volatile  uint16_t i,j,range, delta;
+	volatile  int16_t i,j,range, Delta;
 	
-  Eta = EtaIndex * 50;
-	range = 2000; //65535;
+  Eta = 20; //EtaIndex * 10;
   
-	delta = range / (CUT_VAL_SIZE + 1);
+	Delta = 250;
 	
-	for(i=0; i < CHANNEL_SIZE; i++)
+	// initialize the first cutvalues
+	for(i=0; i < CHANNEL_SIZE; i++) 
 	{
-    for(j=0; j < CUT_VAL_SIZE; j++)
-		{
-      #if ((NBIT == 1) || (NBIT == 4))
-      cutValue[i][0] = 30000;
-      #else
-      cutValue[i][j] = (j+1) * delta;
-      #endif
+    for(j=0; j < CUT_VAL_SIZE; j++)  
+    {
+      cutValue[i][j] = (j-NBIT) * Delta;
+      cutValueSave[i][j] = (j-NBIT) * Delta;
     }
-  }  
-  #if ((NBIT == 2) || (NBIT == 3))    
+  }
+    
 	for (i=0; i < CUT_VAL_SIZE; i++)
 	{
 		etaSous[i] = Eta / (i + 1);
 		etaAdd[i]  = Eta / (CUT_VAL_SIZE - i);
 	}
-  #elif (NBIT == 4)
-  for (i=0; i < 4; i++)
-		etaAdd[i] = (Eta / 3) * i;   
-  #endif
-  __nop();
 }
 
-uint8_t reinitializeBit = 0;
 /**************************************************************/
 //					FBAR_Reinitialize
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	static volatile uint16_t i, j, value, delta;
-	
+	static volatile uint16_t i, j, delta;
+	static volatile int16_t value;
+  
   #pragma unroll_completely 
 	for(i=0; i < CHANNEL_SIZE; i++)
 	{
-		value = ((*bufferFrom) << 8) + (*(bufferFrom+1)); 
-	
-    #if (!((NBIT == 1) || (NBIT == 4)))
-		// quand je prend un delta non constant, le système à la réception ne fonctionne pas très bien
-		delta = (cutValue[i][CUT_VAL_SIZE - 1]-cutValue[i][0]) / (CUT_VAL_SIZE - 1);      
-    #endif 	
-	
-    #if ((NBIT == 1) || (NBIT == 4))
-      cutValue[i][0] = value;
-    #else
+		value = ((*bufferFrom) << 8) + (*(bufferFrom+1));    
+   
+    Prediction[i] = value;
+    
+    delta = Eta;
     
     #pragma unroll_completely 
 		for(j=0; j < CUT_VAL_SIZE; j++)
-			cutValue[i][j] = value + (j-NBIT) * delta;  
-    #endif 
+      cutValue[i][j] = (j-1) * delta;
     
 		bufferFrom+= 2;
 	}
-  reinitializeBit = 1;
 }
 
-volatile uint8_t winner;
+volatile int8_t winner;
 /**************************************************************/
 //					FBAR_Uncompress
 /**************************************************************/
 void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 {
 	uint16_t i, j;
-	volatile int32_t tempValue;
+  uint32_t temp, tempPred;
   
 	//loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
-	//#pragma unroll_completely 
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
 	{ 
-    #pragma unroll_completely 
+    //#pragma unroll_completely 
 		for(j=0; j < CHANNEL_SIZE; j++)  // loop on all the CHANNEL_SIZE channels
-		{
-			winner = (*bufferFrom) & 0x07;
-      bufferFrom++;
+		{      
       
-      //************************************************** N == 1
-      #if (NBIT == 1)
-      tempValue = cutValue[j][0]; 
-          
-      if (winner)
-      { 
-       if (cutValue[j][0] < 65535 - Eta)
-          cutValue[j][0] += Eta;
-      }      
-      else 
-      {
-        if (cutValue[j][0] > Eta)
-          cutValue[j][0] -= Eta;
-      }
-      
-      *bufferTo++ = ( tempValue >> 1) & 0x7FFF;
-      
-      //************************************************** N == 4
-      #elif (NBIT == 4)
-      
-      tempValue = cutValue[j][0];
-      
-      if (winner & 0x04)
-      {
-        if (cutValue[j][0] > Eta)
-          cutValue[j][0] -= etaAdd[(winner & 0x03)];
-      }
-      else
-      {
-        if (cutValue[j][0] < 65535 - Eta)
-          cutValue[j][0] += etaAdd[(winner & 0x03)];   
-      }
-      
-//      if (reinitializeBit)
-//        *bufferTo++ =  60000 ;
+//      PredictorError = (*bufferFrom) << 8;
+//      bufferFrom++;
+
+//      if (Prediction[j] + PredictorError - 0x8000 < 0)
+//        Prediction[j] = 0;     
+//      else if (Prediction[j] + PredictorError - 0x8000 >= 0xFFFF - 10)
+//        Prediction[j] = 0xFFFF;
 //      else
-      *bufferTo++ = ( tempValue >> 1) & 0x7FFF; 
+//      Prediction[j] = Prediction[j] + PredictorError - 0x8000;
+//      
+//      *bufferTo++ = (Prediction[j] >> 1 ) & 0x7FFF; 
+
+			winner = (*bufferFrom++);
       
-      //************************************************** N == 2 or 3
-      #elif ((NBIT == 2) || (NBIT == 3)) 
-      
-      // set the new the cut values
       FBAR_AdaptCutValues(j, winner);
       
-      if (!winner)
-      { 
-        //tempValue = cutValue[j][0] - Eta;
-        //if ( tempValue < 0)
-          tempValue = cutValue[j][0];
-        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;
-      }      
-      else if (winner == CUT_VAL_SIZE)
+      if (winner == CUT_VAL_SIZE)
+        PredictorError = cutValue[j][CUT_VAL_SIZE-1];    
+      else if (!winner) 
+        PredictorError = cutValue[j][0];               
+      else 
+        PredictorError = (cutValue[j][winner-1] + cutValue[j][winner]) /2;
+      
+      if (PredictorError >= 0)
+      {  
+        if (Prediction[j] + PredictorError < 0xFFFF)
+          Prediction[j] = (Prediction[j] * 120 / 128) + PredictorError;
+        else
+          Prediction[j] = 0xFFFF * 120 / 128;
+      }
+      else //(PredictorError < 0)
       {
-        //tempValue = cutValue[j][CUT_VAL_SIZE-1] + Eta; //((cutValue[j][CUT_VAL_SIZE-1]-cutValue[j][CUT_VAL_SIZE-2])/2)));
-       // if (tempValue > 65535 )
-          tempValue = cutValue[j][CUT_VAL_SIZE-1];
-        *bufferTo++ = ( tempValue >> 1)  & 0x7FFF;           
-      }  
-      else
-        *bufferTo++ = ((cutValue[j][winner] + cutValue[j][winner-1]) >> 2) & 0x7FFF; 
-   
-      #endif  
-		} 
-    reinitializeBit = 0;
+        if (Prediction[j] - (uint16_t)(-PredictorError) > 0)
+          Prediction[j] = (Prediction[j] * 120 / 128) - (uint16_t)(-PredictorError);
+        else
+          Prediction[j] = 0;
+      }    
+      
+       *bufferTo++ = (Prediction[j]) & 0x7FFF; 
+       
+//      if (Prediction[j] > 50)
+//       Prediction[j] -= 3; 
+        
+//      if (winner == CUT_VAL_SIZE-1)
+//        temp = cutValue[j][CUT_VAL_SIZE-1];    
+//      else if (!winner) 
+//        temp = cutValue[j][0];               
+//      else
+//        temp = (cutValue[j][winner-1] + cutValue[j][winner]) /2;
+//      *bufferTo++ = temp;
+    } 
 	}	
-}	
+}   
 	
 /**************************************************************/
 //					FBAR_AdaptCutValues
@@ -207,7 +180,7 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (!i)
 			{
-				if (cutValue[channel][0] >  Eta) 
+				if (cutValue[channel][0] >  (-32767) + Eta) 
 					cutValue[channel][0] -= Eta;
 			}
 			else if ((cutValue[channel][i] - cutValue[channel][i-1]) >= etaSous[i])
@@ -217,12 +190,13 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		{
 			if (i == CUT_VAL_SIZE-1) 
 			{
-        if (cutValue[channel][CUT_VAL_SIZE-1] <  65535 - Eta) 
+        if (cutValue[channel][CUT_VAL_SIZE-1] <  32767 - Eta) 
 					cutValue[channel][CUT_VAL_SIZE-1] += Eta;
 			}
 			else if ((cutValue[channel][i+1] - cutValue[channel][i]) >= etaAdd[i])
 				cutValue[channel][i] += etaAdd[i];
 		}
+    cutValue[channel][i] -= (cutValue[channel][i] - cutValueSave[channel][i]) / 256;
 	}
 }
 
@@ -245,24 +219,6 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         {
           CurrentValue = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
           *bufferTo = CurrentValue;
-//          
-//          if (CurrentValue > PreviousValue[j] + SECU)
-//          {
-//            *bufferTo = PreviousValue[j];
-//            PreviousValue[j] = PreviousValue[j] + SECU;
-//            
-//          }
-//          else if (CurrentValue < PreviousValue[j] - SECU) 
-//          {
-//            *bufferTo = PreviousValue[j];
-//            PreviousValue[j] = PreviousValue[j] - SECU;
-//          }
-//          else
-//          {
-//            *bufferTo = CurrentValue;
-//            PreviousValue[j] = CurrentValue;
-//          }
-          
           bufferTo++;
           bufferFrom += 2;
         }
@@ -316,22 +272,6 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         {
           CurrentValue = ((*bufferFrom) << 7) & 0x7FFF;
           *bufferTo = CurrentValue;
-//          if (CurrentValue > PreviousValue[j] + SECU)
-//          {
-//            *bufferTo = PreviousValue[j];
-//            PreviousValue[j] = PreviousValue[j] + SECU;
-//            
-//          }
-//          else if (CurrentValue < PreviousValue[j] - SECU) 
-//          {
-//            *bufferTo = PreviousValue[j];
-//            PreviousValue[j] = PreviousValue[j] - SECU;
-//          }
-//          else
-//          {
-//            *bufferTo = CurrentValue;
-//            PreviousValue[j] = CurrentValue;
-//          }
           
           bufferTo++;
           bufferFrom++;
