@@ -60,7 +60,7 @@ int main(void)
   State         = NextState();
   
   SetOutput(Output_device);	
-  ElectrophyData_Reset(Output_device, State, EtaIndex);
+  ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
   Board_Interrupt(HIGH, State); 
   DAC_SetNewState(State);
   Board_Leds(State, Output_device);
@@ -149,7 +149,7 @@ static void ChangeState(void)
       }
       else
         NRF_SendNewState((uint8_t) State);      
-      ElectrophyData_Reset(Output_device, State, EtaIndex);
+      ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
       DAC_SetNewState(State); 
       Board_Leds(State, Output_device);  
       break;
@@ -160,7 +160,7 @@ static void ChangeState(void)
     {           
       Output_device = (Output_device == Usb) ? Dac : Usb; 
       SetOutput(Output_device);
-      ElectrophyData_Reset(Output_device, State, EtaIndex);
+      ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
       Board_LedsBlink(State, Output_device);      
       break;
     }
@@ -173,7 +173,7 @@ static void ChangeState(void)
         Board_Leds(NO_LED, Output_device);
         EtaIndex = Board_GetEtaIndex();
         NRF_SendNewState(EtaIndex + 100);
-        ElectrophyData_Reset(Output_device, State, EtaIndex);
+        ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
         Board_Leds(State, Output_device);
       }
       break;

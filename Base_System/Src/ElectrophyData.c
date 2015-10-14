@@ -256,7 +256,8 @@ uint8_t ElectrophyData_Process(void)
 			
 			//if cutvalues reinitialisation balise
 			if (*FbarReadPtr == 0xFF && *(FbarReadPtr + 1) == 0xFF )
-        FBAR_Reinitialize((FbarReadPtr + 2));		
+        FBAR_Reinitialize((FbarReadPtr + 2));
+      
 			// if no reinitialisation
 			else 
 			{
@@ -292,9 +293,9 @@ uint8_t ElectrophyData_Process(void)
 }
 
 // **************************************************************
-//					ElectrophyData_Reset
+//					ElectrophyData_Reinitialize
 // **************************************************************
-void ElectrophyData_Reset(Output_device_t Output, DataStateTypeDef State, uint16_t eta)
+void ElectrophyData_Reinitialize(Output_device_t Output, DataStateTypeDef State, uint16_t eta)
 {
   ElectrophyData_State = State;
   ElectrophyData_Init(eta);

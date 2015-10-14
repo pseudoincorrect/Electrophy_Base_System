@@ -39,7 +39,6 @@ static int16_t etaSous[CUT_VAL_SIZE + 1]={0}; //  (CUT_VAL_SIZE + 1) is for the 
 static int16_t Prediction[CHANNEL_SIZE]     = {0};
 static int16_t PredictorError  = {0};
 static int16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE]     = {0}; 
-static int16_t cutValueSave[CHANNEL_SIZE][CUT_VAL_SIZE] = {0}; 
 
 //*************************************************************************
 //*************************************************************************
@@ -51,11 +50,9 @@ static int16_t cutValueSave[CHANNEL_SIZE][CUT_VAL_SIZE] = {0};
 /**************************************************************/
 void FBAR_Initialize(uint16_t EtaIndex)
 {
-	volatile  int16_t i,range, Delta;
+	volatile  int16_t i;
 	
   Eta = ETA_; //EtaIndex * 10;
-  
-	Delta = DELTA_;
 	
 	// initialize the first cutvalues
 	for(i=0; i < CHANNEL_SIZE; i++) 
@@ -65,10 +62,6 @@ void FBAR_Initialize(uint16_t EtaIndex)
     cutValue[i][0] = - DELTA_;
     cutValue[i][1] = 0;
     cutValue[i][2] = DELTA_;
-    
-    cutValueSave[i][0] = - DELTA_;
-    cutValueSave[i][1] = 0;
-    cutValueSave[i][2] = DELTA_;
   }
   
 	for (i=0; i < CUT_VAL_SIZE; i++)
@@ -83,24 +76,62 @@ void FBAR_Initialize(uint16_t EtaIndex)
 /**************************************************************/
 void FBAR_Reinitialize(uint8_t * bufferFrom)
 {
-	static volatile uint16_t i, j, delta;
-	static volatile int16_t value;
+	static uint16_t i, j;
+	static int16_t value;
+  static uint8_t ReinitCoice;
   
-  #pragma unroll_completely 
-	for(i=0; i < CHANNEL_SIZE; i++)
-	{
-		value = ((*bufferFrom) << 8) + (*(bufferFrom+1));    
-   
-    Prediction[i] = value;
+  ReinitCoice = *bufferFrom++;
+  
+  switch (ReinitCoice)
+  {
+    case 0x01 :
+    {
+      #pragma unroll_completely 
+      for(i=0; i < CHANNEL_SIZE; i++)
+      {
+        value = ((*bufferFrom) << 8) + (*(bufferFrom+1));
+        Prediction[i] = value;
+        bufferFrom+= 2;
+      }
+      __nop(); __nop(); __nop(); 
+      break;
+    }
     
-    delta = Eta;
+    case 0x02 :
+    {
+      #pragma unroll_completely
+      for(i=0; i < CHANNEL_SIZE/2; i++)
+      {		
+        #pragma unroll_completely
+        for(j=0; j < CUT_VAL_SIZE; j++)
+        {
+          cutValue[i][j] = ((*bufferFrom) << 8) + (*(bufferFrom+1)); 
+          bufferFrom+= 2;          
+        }
+      }
+      __nop(); __nop(); __nop(); 
+      break;
+    }
     
-    #pragma unroll_completely 
-		for(j=0; j < CUT_VAL_SIZE; j++)
-      cutValue[i][j] = (j-1) * delta;
+    case 0x03 :
+    {
+      #pragma unroll_completely
+      for(i=CHANNEL_SIZE/2; i < CHANNEL_SIZE; i++)
+      {		
+        #pragma unroll_completely
+        for(j=0; j < CUT_VAL_SIZE; j++)
+        {
+          cutValue[i][j] = ((*bufferFrom) << 8) + (*(bufferFrom+1));
+          bufferFrom+= 2;
+        }
+      }
+      __nop(); __nop(); __nop(); 
+      break;
+    }
     
-		bufferFrom+= 2;
-	}
+    default :
+      break; 
+  }
 }
 
 volatile int8_t winner;
@@ -114,7 +145,7 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 	//loop on an NRF frame : NRF_CHANNEL_FRAME * CHANNEL_SIZE channels
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
 	{ 
-    //#pragma unroll_completely 
+    #pragma unroll_completely 
 		for(j=0; j < CHANNEL_SIZE; j++)  // loop on all the CHANNEL_SIZE channels
 		{      
 			winner = (*bufferFrom++);
@@ -131,22 +162,6 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
                  
       Prediction[j] = (Prediction[j] * H_) + PredictorError;
       
-//      if (PredictorError >= 0)
-//      {  
-//        if (Prediction[j] + PredictorError < 0xFFFF)
-//          Prediction[j] = (Prediction[j] * H_) + PredictorError;
-//        else
-//          Prediction[j] = 0xFFFF;
-//          //Prediction[j] = 0xFFFF * H_;
-//      }
-//      else //(PredictorError < 0)
-//      {
-//        if (Prediction[j] - (uint16_t)(-PredictorError) > 0)
-//          Prediction[j] = (Prediction[j] * H_) - (uint16_t)(-PredictorError);
-//        else
-//          Prediction[j] = 0;
-//      }    
-//      
       *bufferTo++ = Prediction[j]; 
     } 
 	}	
@@ -195,7 +210,6 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
           cutValue[channel][i] += TmpCut;	
       }
 		}
-    //TmpCut = (cutValue[channel][i] - cutValueSave[channel][i]) / BETA;
 	}
 }
 

@@ -87,8 +87,8 @@ uint16_t * ElectrophyData_Read_DAC(void);
 //process function to decompress datas to output buffer (USB or DAC)
 uint8_t  ElectrophyData_Process(void);
 
-// Reset the buffer with the new setting  
-void ElectrophyData_Reset(Output_device_t Output, DataStateTypeDef State, uint16_t eta);
+// Reinitialize the buffer with the new setting  
+void ElectrophyData_Reinitialize(Output_device_t Output, DataStateTypeDef State, uint16_t eta);
 
 #endif
 
