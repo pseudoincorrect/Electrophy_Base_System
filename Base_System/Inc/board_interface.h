@@ -35,11 +35,14 @@ static void AdcInit(void);
 //Initialize a periodic interript to check the potentiometer adc
 static void TIM3Init(uint32_t reloadValue, uint16_t prescalerValue);
 
-// call back the Timer interrupt
+// call back the Timer interrupt, refresh EtaIndex
 void TIM3_IRQHandler(void);
 
 // call back the Push Button interrupt
 void EXTI0_IRQHandler(void);
+
+// call back the Push Button BETA interrupt, refresh BetaIndex
+void EXTI1_IRQHandler(void);
 
 // Control respectively the top bottom left rigth leds 
 static void Leds(uint8_t haut, uint8_t bas, uint8_t gauche, uint8_t droite);
@@ -59,8 +62,11 @@ uint8_t Board_GetUpdate(void);
 // enable timer and EXTI interrupt in fuction of the state 
 void Board_Interrupt(uint8_t input, DataStateTypeDef CurrentState);
 
-// get a value of eta between 0 and  100 in function of the Adc_pot
+// get a value of eta between 0 and  32
 uint8_t Board_GetEtaIndex(void);
+
+// get a value of beta between 0 and 7
+uint8_t Board_GetBetaIndex(void);
 
 #endif
 

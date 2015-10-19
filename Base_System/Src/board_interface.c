@@ -1,6 +1,6 @@
 #include "board_interface.h"
 
-volatile static uint8_t  FlagUpdate, FlagState, FlagOutput, FlagEta;
+volatile static uint8_t  FlagUpdate, FlagState, FlagOutput, FlagEtaBeta;
 static ADC_HandleTypeDef  AdcHandle;
 static TIM_HandleTypeDef  TimHandle;
 
@@ -51,7 +51,7 @@ void Board_Init(void)
   FlagUpdate  = 0;
   FlagState   = 0;
   FlagOutput  = 0;
-  FlagEta     = 0;
+  FlagEtaBeta = 0;
 }
 
 /**************************************************************/
@@ -62,20 +62,19 @@ static void GpioInit(void)
 	GPIO_InitTypeDef GPIO_InitStruct;
   
   //****************************************************** LED's
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+  GPIO_InitStruct.Pin   = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
   
-    /*##-2- Configure peripheral GPIO ##########################################*/ 
   /* ADC1 Channel1 GPIO pin configuration */
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Pin = GPIO_PIN_1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
   
-//   //****************************************************** debug pin
+//  //****************************************************** debug pin
 //	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 //  GPIO_InitStruct.Pull = GPIO_NOPULL;
 //  GPIO_InitStruct.Pin =  GPIO_PIN_15 | GPIO_PIN_10 | GPIO_PIN_8;
@@ -91,6 +90,17 @@ static void GpioInit(void)
   /* Enable and set EXTI Line0 Interrupt to the lowest priority */
   HAL_NVIC_SetPriority(EXTI0_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+  
+    //****************************************************** Push button BETA	
+  /* Configure PA0 pin as input floating */
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* Enable and set EXTI Line0 Interrupt to the lowest priority */
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 }
 
 // *************************************************************
@@ -181,6 +191,34 @@ void EXTI0_IRQHandler(void)
   EXTI->PR = EXTI_PR_PR0;
 }
 
+uint16_t BetaIndex = 1;
+/**************************************************************/
+//					EXTI1_IRQHandler
+/**************************************************************/
+void EXTI1_IRQHandler(void)
+{
+  uint32_t ticksIn;
+  
+	if (EXTI->PR & EXTI_PR_PR1)
+	{
+    // disable interrupt so it won't triger before the change of state in "main.c"
+    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+    
+    ticksIn = It_getTicks();   
+    while(It_getTicks() - ticksIn < 250){;} 
+    
+    BetaIndex++;
+      
+    if(BetaIndex > 8)
+      BetaIndex = 1;  
+
+    FlagUpdate = 1;
+    FlagEtaBeta = 1;
+  }
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  EXTI->PR = EXTI1_IRQn;
+}
+
 static uint8_t toggle;
 volatile uint32_t adcVal, AdcResult = 0;
 /**************************************************************/
@@ -203,11 +241,9 @@ void TIM3_IRQHandler(void)
         adcVal =  HAL_ADC_GetValue(&AdcHandle);
         if (adcVal - DELTA_ADC >  AdcResult || adcVal + DELTA_ADC <  AdcResult)
         {
-         
-         FlagEta = 1;
-         FlagUpdate = 1;
-         AdcResult =  adcVal;
-          
+          FlagEtaBeta = 1;
+          FlagUpdate = 1;
+          AdcResult =  adcVal;
         }
         toggle = 1;
       }
@@ -222,16 +258,16 @@ void TIM3_IRQHandler(void)
 /**************************************************************/	
 static void Leds(uint8_t haut, uint8_t bas, uint8_t gauche, uint8_t droite)
 { 
-  if (haut)  GPIOD->BSRRL |= GPIO_PIN_13; 
+  if (haut)   GPIOD->BSRRL |= GPIO_PIN_13; 
 	else 			  GPIOD->BSRRH |= GPIO_PIN_13;
   
-  if (bas)  GPIOD->BSRRL |= GPIO_PIN_15; 
+  if (bas)    GPIOD->BSRRL |= GPIO_PIN_15; 
 	else 			  GPIOD->BSRRH |= GPIO_PIN_15;
   
-  if (gauche)  GPIOD->BSRRL |= GPIO_PIN_12; 
+  if (gauche) GPIOD->BSRRL |= GPIO_PIN_12; 
 	else 			  GPIOD->BSRRH |= GPIO_PIN_12;
   
-  if (droite)  GPIOD->BSRRL |= GPIO_PIN_14; 
+  if (droite) GPIOD->BSRRL |= GPIO_PIN_14; 
 	else 			  GPIOD->BSRRH |= GPIO_PIN_14;  
 }
 
@@ -242,7 +278,7 @@ void Board_Leds(uint8_t  state, Output_device_t output)
 {
 	switch(state)
 	{
-		case ((uint8_t) __8ch_3bit__20kHz__C__) :
+		case ((uint8_t) __8ch_2bit__20kHz__C__) :
 			if (output == Usb)
         Leds(1,0,0,0);
       else 
@@ -331,10 +367,10 @@ uint8_t Board_GetUpdate(void)
     FlagOutput = 0;
     return FLAG_OUTPUT;
   }
-  else  if (FlagEta)
+  else  if (FlagEtaBeta)
   {
-    FlagEta = 0;
-    return FLAG_ETA;
+    FlagEtaBeta = 0;
+    return FLAG_ETA_BETA;
   }
   else 
     return FLAG_NO_UPDATE;
@@ -348,35 +384,46 @@ void Board_Interrupt(uint8_t input, DataStateTypeDef CurrentState)
   if (input) 
   {  
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-    if (CurrentState == __8ch_3bit__20kHz__C__)
+    if (CurrentState == __8ch_2bit__20kHz__C__)
       HAL_NVIC_EnableIRQ(TIM3_IRQn);
   }
   else
-  {  
-   
+  { 
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);   
     HAL_NVIC_DisableIRQ(TIM3_IRQn); 
   }
 } 
 
+uint16_t EtaIndex;
 /**************************************************************/
 //					Board_GetEtaIndex
 /**************************************************************/
 uint8_t Board_GetEtaIndex(void)
-{ 
-  static uint16_t EtaIndex;
-  
+{   
   EtaIndex = AdcResult;
   if (EtaIndex > 188)
     EtaIndex = 188;
   
-  EtaIndex = EtaIndex * 100; 
+  EtaIndex = EtaIndex * 32; 
   
-  EtaIndex = EtaIndex / 188; 
+  EtaIndex = EtaIndex / 188;
+    
+  if (EtaIndex < 5)
+    EtaIndex = 5;
+    
+  if (EtaIndex > 32)
+    EtaIndex = 32;
   
   return (uint8_t) EtaIndex;
 }
 
+/**************************************************************/
+//					Board_GetEtaIndex
+/**************************************************************/
+uint8_t Board_GetBetaIndex(void)
+{ 
+  return (uint8_t) BetaIndex;
+}
 
 
 

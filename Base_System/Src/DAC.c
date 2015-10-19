@@ -21,7 +21,7 @@ static void DAC_SendSample(const DAC_Conf * dac, uint16_t * buffer);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static DataStateTypeDef DataState = FIRST_STATE;
+static DataStateTypeDef DataState = STATE_INIT;
 
 //static uint16_t DAC_Channel[CHANNEL_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7};
 

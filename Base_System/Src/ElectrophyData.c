@@ -17,8 +17,8 @@ static ElectrophyData_NRF ElectrophyDataNRF;
 static ElectrophyData_USB ElectrophyDataUSB;
 static ElectrophyData_DAC ElectrophyDataDAC;
 
-static DataStateTypeDef ElectrophyData_State  = FIRST_STATE; 
-static Output_device_t  ElectrophyData_Output = FIRST_OUTPUT; // Set which output device we use (DAC or USB)
+static DataStateTypeDef ElectrophyData_State  = STATE_INIT; 
+static Output_device_t  ElectrophyData_Output = OUTPUT_INIT; // Set which output device we use (DAC or USB)
 
 // debug ptr to the beginning of each buffer
 volatile uint8_t  * NRFptr;
@@ -33,7 +33,7 @@ volatile uint16_t * DACptr;
 // **************************************************************
 //					ElectrophyData_Init
 // **************************************************************
-void ElectrophyData_Init(uint16_t EtaIndex)
+void ElectrophyData_Init(int16_t Eta, int16_t Beta)
 {
 	uint16_t i,j,k;
 	
@@ -72,7 +72,7 @@ void ElectrophyData_Init(uint16_t EtaIndex)
 	ElectrophyDataDAC.ReadIndexNrf  = 0;
 	ElectrophyDataDAC.WriteIndexNrf = 0;
 	
-	FBAR_Initialize(EtaIndex);
+	FBAR_Initialize(Eta, Beta);
 }
 
 // *************************************************************************
@@ -250,7 +250,7 @@ uint8_t ElectrophyData_Process(void)
 		uint8_t *  FbarReadPtr, * Assemble8Ptr;
 		uint16_t * FbarWritePtr,* Assemble16Ptr;
        
-		if (ElectrophyData_State == __8ch_3bit__20kHz__C__)  // if compress
+		if (ElectrophyData_State == __8ch_2bit__20kHz__C__)  // if compress
 		{	
 			FbarReadPtr = ElectrophyData_Read_NRF();
 			
@@ -295,10 +295,10 @@ uint8_t ElectrophyData_Process(void)
 // **************************************************************
 //					ElectrophyData_Reinitialize
 // **************************************************************
-void ElectrophyData_Reinitialize(Output_device_t Output, DataStateTypeDef State, uint16_t eta)
+void ElectrophyData_Reinitialize(Output_device_t Output, DataStateTypeDef State, int16_t eta, int16_t beta)
 {
   ElectrophyData_State = State;
-  ElectrophyData_Init(eta);
+  ElectrophyData_Init(eta, beta);
   ElectrophyData_Output = Output;
 }  
 

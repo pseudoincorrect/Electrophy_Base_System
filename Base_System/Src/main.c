@@ -19,6 +19,8 @@ static void             SetOutput   (Output_device_t  Output_device);
 static void             ChangeState (void);
 // set the next state of the state machine (Moore state machine)
 static DataStateTypeDef NextState   (void);
+// calcul ADCPm parametr regarding the board inputs
+static void SetState(DataStateTypeDef state);
 
 // *************************************************************************
 // *************************************************************************
@@ -26,7 +28,7 @@ static DataStateTypeDef NextState   (void);
 // *************************************************************************
 // *************************************************************************
 const DataStateTypeDef stateSystem[4] = { 
-  __8ch_3bit__20kHz__C__, 
+  __8ch_2bit__20kHz__C__, 
   __4ch_16bit_20kHz_NC__, 
   __8ch_16bit_10kHz_NC__, 
   __8ch_8bit__20kHz_NC__
@@ -34,7 +36,12 @@ const DataStateTypeDef stateSystem[4] = {
 
 static Output_device_t  Output_device;
 static DataStateTypeDef State;
-static     uint8_t      EtaIndex;
+static int16_t Eta = ETA_INIT, Beta = BETA_INIT;
+static uint8_t  EtaIndexToSend, BetaIndexToSend;
+
+extern uint8_t  betaInc;
+extern uint32_t adcVal, AdcResult;
+extern uint16_t BetaIndex, EtaIndex;
 
 // *************************************************************************
 // *************************************************************************
@@ -55,23 +62,22 @@ int main(void)
   Board_Init();
 	  
   // SOFTWARE initialization
-  Output_device = FIRST_OUTPUT;
-  EtaIndex      = ETA_INDEX_INIT;
+  Output_device = OUTPUT_INIT;
+  Eta           = ETA_INIT;
+  Beta          = BETA_INIT;
   State         = NextState();
   
   SetOutput(Output_device);	
-  ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
+  ElectrophyData_Reinitialize(Output_device, State, Eta, Beta);
   Board_Interrupt(HIGH, State); 
   DAC_SetNewState(State);
   Board_Leds(State, Output_device);
-  //Board_LedsBlink(State);
   
-  // INFINITE LOOP 
 	while (1)
   { 
     if (Board_CheckUpdate())
     {
-      Board_Interrupt(LOW, State);
+      Board_Interrupt(LOW,  State);
       ChangeState();
       Board_Interrupt(HIGH, State);
     }  
@@ -142,14 +148,8 @@ static void ChangeState(void)
     case (FLAG_STATE) :
     {
       State = NextState();  
-      if (State == __8ch_3bit__20kHz__C__)
-      {
-        EtaIndex = Board_GetEtaIndex();
-        NRF_SendNewState(EtaIndex + 100);
-      }
-      else
-        NRF_SendNewState((uint8_t) State);      
-      ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
+      SetState(State);   
+      ElectrophyData_Reinitialize(Output_device, State, Eta,  Beta);
       DAC_SetNewState(State); 
       Board_Leds(State, Output_device);  
       break;
@@ -160,20 +160,19 @@ static void ChangeState(void)
     {           
       Output_device = (Output_device == Usb) ? Dac : Usb; 
       SetOutput(Output_device);
-      ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
+      ElectrophyData_Reinitialize(Output_device, State, Eta,  Beta);
       Board_LedsBlink(State, Output_device);      
       break;
     }
     
     //Change and send the Eta used by FBAR
-    case (FLAG_ETA) :
+    case (FLAG_ETA_BETA) :
     {
-      if (State == __8ch_3bit__20kHz__C__)
+      if (State == __8ch_2bit__20kHz__C__)
       {
         Board_Leds(NO_LED, Output_device);
-        EtaIndex = Board_GetEtaIndex();
-        NRF_SendNewState(EtaIndex + 100);
-        ElectrophyData_Reinitialize(Output_device, State, EtaIndex);
+        SetState(State);
+        ElectrophyData_Reinitialize(Output_device, State, Eta,  Beta);
         Board_Leds(State, Output_device);
       }
       break;
@@ -183,6 +182,26 @@ static void ChangeState(void)
       break;
   }
 }  
+
+// **************************************************************
+// 	 				            SetState 
+// **************************************************************
+static void SetState(DataStateTypeDef state)
+{
+  if (state == __8ch_2bit__20kHz__C__)
+  {  
+    EtaIndexToSend  = Board_GetEtaIndex();
+    BetaIndexToSend = Board_GetBetaIndex(); 
+    
+    Eta  = EtaIndexToSend * 32;
+    Beta = 1 << BetaIndexToSend;
+
+    NRF_SendNewState(EtaIndexToSend  + 100);
+    NRF_SendNewState(BetaIndexToSend + 200);
+  }
+  else
+    NRF_SendNewState((uint8_t) State); 
+}
 
 static uint8_t indexState = 3;
 // **************************************************************

@@ -5,7 +5,7 @@
 #include <math.h>
 #include <CommonInclude.h>
 
-void FBAR_Initialize(uint16_t EtaIndex);
+void FBAR_Initialize(int16_t EtaIndex, int16_t BetaIndex);
 
 void FBAR_Reinitialize(uint8_t * bufferFrom);
 
