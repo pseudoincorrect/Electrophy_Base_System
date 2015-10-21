@@ -5,7 +5,7 @@
 // 									Common Include
 // *************************************************************************
 
-#define COMPRESS	1
+//+#define PARAMETER_SELECTION
 
 /* GPIO command */
 #define LOW		0
@@ -61,8 +61,13 @@ typedef enum
   
 } DataStateTypeDef;
 
-#define STATE_INIT	  __8ch_8bit__20kHz_NC__
+#define STATE_INIT	 __8ch_8bit__20kHz_NC__
 #define OUTPUT_INIT  Usb
+
+#define BETA_FIXED            8
+#define ETA_FIXED             512
+
+
 #endif
 
 
