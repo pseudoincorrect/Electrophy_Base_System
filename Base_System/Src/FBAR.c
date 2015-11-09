@@ -249,7 +249,6 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 	}
 }
 
-static uint16_t PreviousValue[CHANNEL_SIZE] = {0};
 /**************************************************************/
 //					FBAR_Assemble
 /**************************************************************/
@@ -288,24 +287,8 @@ void FBAR_Assemble(uint8_t * bufferFrom, uint16_t * bufferTo, DataStateTypeDef s
         for(j=0; j < CHANNEL_SIZE; j++)
         {
           CurrentValue = ( (*bufferFrom) << 7) + (*(bufferFrom + 1) >> 1) & 0x7FFF;
-          
-          if (CurrentValue > PreviousValue[j])
-          {
-            *bufferTo = PreviousValue[j];
-            PreviousValue[j] = PreviousValue[j];
-            
-          }
-          else if (CurrentValue < PreviousValue[j]) 
-          {
-            *bufferTo = PreviousValue[j];
-            PreviousValue[j] = PreviousValue[j];
-          }
-          else
-          {
-            *bufferTo = CurrentValue;
-            PreviousValue[j] = CurrentValue;
-          }
-       
+					*bufferTo = CurrentValue;
+					
           bufferTo++;
           bufferFrom += 2;
         }

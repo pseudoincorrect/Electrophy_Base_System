@@ -65,7 +65,7 @@ static void GpioInit(void)
 	GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull  = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-  GPIO_InitStruct.Pin   = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+  GPIO_InitStruct.Pin   = GPIO_PIN_9 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
   
   /* ADC1 Channel1 GPIO pin configuration */
@@ -192,6 +192,7 @@ void EXTI0_IRQHandler(void)
 }
 
 uint16_t BetaIndex = 1;
+uint8_t tog1 = 0;
 /**************************************************************/
 //					EXTI1_IRQHandler
 /**************************************************************/
@@ -204,14 +205,27 @@ void EXTI1_IRQHandler(void)
     // disable interrupt so it won't triger before the change of state in "main.c"
     HAL_NVIC_DisableIRQ(EXTI1_IRQn);
     
+		if(BetaIndex == 1)
+		{
+			GPIOD->BSRRH |= GPIO_PIN_9; tog1 = 1;
+			ticksIn = It_getTicks();
+			while(It_getTicks() - ticksIn < 250){;}		
+		}
+		
+		GPIOD->BSRRL |= GPIO_PIN_9; tog1 = 0;  
+		
     ticksIn = It_getTicks();   
     while(It_getTicks() - ticksIn < 250){;} 
     
-    BetaIndex++;
+		GPIOD->BSRRH |= GPIO_PIN_9; tog1 = 1;
+    
+		BetaIndex++;
       
     if(BetaIndex > 8)
-      BetaIndex = 1;  
-
+    {  
+			BetaIndex = 1;  
+			GPIOD->BSRRL |= GPIO_PIN_9; tog1 = 0;
+		}
     FlagUpdate = 1;
     FlagEtaBeta = 1;
   }
