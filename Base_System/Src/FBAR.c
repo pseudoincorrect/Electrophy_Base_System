@@ -150,7 +150,11 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
 	for(i=0; i < NRF_CHANNEL_FRAME; i++)
 	{ 
     #pragma unroll_completely 
-		for(j=0; j < CHANNEL_SIZE; j++)  // loop on all the CHANNEL_SIZE channels
+		#ifdef COMPARISON
+		for(j=0; j < 2; j++)
+		#else
+		for(j=0; j < CHANNEL_SIZE; j++)
+		#endif
 		{      
 			winner = (*bufferFrom++);
       
@@ -167,7 +171,18 @@ void FBAR_Uncompress(uint8_t * bufferFrom, uint16_t * bufferTo)
       Prediction[j] = (Prediction[j] * H_) + PredictorError;
       
       *bufferTo++ = Prediction[j]; 
-    } 
+    }
+	  #ifdef COMPARISON
+		*bufferTo = ((*bufferFrom << 7) + (*(bufferFrom + 1) >> 1)) & 0x7FFF;
+		bufferTo++; bufferFrom+= 2;
+		*bufferTo = ((*bufferFrom << 7) + (*(bufferFrom + 1) >> 1)) & 0x7FFF;
+		bufferTo++; bufferFrom+= 2;
+		*bufferTo++ = 0; 
+		*bufferTo++ = 0; 
+		*bufferTo++ = 0; 
+		*bufferTo++ = 0; 
+		bufferFrom += 2;
+		#endif
 	}	
 }   
 	

@@ -5,7 +5,9 @@
 // 									Common Include
 // *************************************************************************
 
-//+#define PARAMETER_SELECTION
+//#define PARAMETER_SELECTION //enable the change of Beta
+
+#define COMPARISON // On compressing mode, compress only 4 chanel and send at the same time their non-compressed value to compare
 
 /* GPIO command */
 #define LOW		0
@@ -61,12 +63,11 @@ typedef enum
   
 } DataStateTypeDef;
 
-#define STATE_INIT	 __8ch_8bit__20kHz_NC__
+#define STATE_INIT	 __8ch_2bit__20kHz__C__
 #define OUTPUT_INIT  Usb
 
 #define BETA_FIXED            8
 #define ETA_FIXED             512
-
 
 #endif
 
