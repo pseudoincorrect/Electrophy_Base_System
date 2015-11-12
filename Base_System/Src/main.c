@@ -65,14 +65,15 @@ int main(void)
   Output_device = OUTPUT_INIT;
   Eta           = ETA_INIT;
   Beta          = BETA_INIT;
-  State         = NextState();
+  State         = STATE_INIT;
   
   SetOutput(Output_device);	
   ElectrophyData_Reinitialize(Output_device, State, Eta, Beta);
   Board_Interrupt(HIGH, State); 
   DAC_SetNewState(State);
   Board_Leds(State, Output_device);
-  
+  SetState(State);
+	
 	while (1)
   { 
     if (Board_CheckUpdate())
@@ -203,7 +204,7 @@ static void SetState(DataStateTypeDef state)
     NRF_SendNewState((uint8_t) State); 
 }
 
-static uint8_t indexState = 3;
+static uint8_t indexState = STATE_INIT;
 // **************************************************************
 // 	 				            NextState 
 // **************************************************************

@@ -302,6 +302,10 @@ void DAC_SetNewState(DataStateTypeDef State)
 {
   DataState = State;
   
+	//(497, 20)  10 kHz
+	//(   , 20)  15 kHz
+	//(260, 20)  20 kHz
+	
   if (DataState == __8ch_16bit_10kHz_NC__)
   {
     TIM2Init(497, 20);  //set the dac refreshing rate at 10 kHz
@@ -309,7 +313,7 @@ void DAC_SetNewState(DataStateTypeDef State)
   }
   else 
   {
-    TIM2Init(260, 20);  //set the dac refreshing rate at 20 kHz
+    TIM2Init(302, 20);  //set the dac refreshing rate at 20 kHz
     DAC_Enable(HIGH);
   }
 }
