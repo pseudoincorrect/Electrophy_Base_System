@@ -17,9 +17,6 @@ etaAdd  [0] = ETA/1			[1] =	ETA/2			[2] =	ETA/3
 etaSous [0] = ETA/3			[1] =	ETA/2			[2] =	ETA/1	
 */
 
-#define H_     120/128
-#define BETA   BETA_INIT
-#define ETA_   ETA_INIT
 #define DELTA_ 400
 
 // *************************************************************************
@@ -33,7 +30,10 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner);
 // 						static variables	
 // *************************************************************************
 // *************************************************************************
-static int16_t Eta, Beta;
+static int16_t Eta = 0;
+#ifdef PARAMETER_SELECTION	
+Beta = 0;
+#endif
 static int16_t etaAdd[CUT_VAL_SIZE]     ={0};
 static int16_t etaSous[CUT_VAL_SIZE]    ={0};
 static int16_t Prediction[CHANNEL_SIZE] = {0};
@@ -51,14 +51,16 @@ static int16_t cutValue[CHANNEL_SIZE][CUT_VAL_SIZE] = {0};
 void FBAR_Initialize(int16_t EtaIndex, int16_t BetaIndex)
 {
 	uint8_t i;
-  
+	
+	#ifdef PARAMETER_SELECTION  
   if (BetaIndex > 0 && BetaIndex <= 128)
     Beta  = BetaIndex;
+	#endif
   
   #ifdef PARAMETER_SELECTION
   Eta = EtaIndex;
   #else
-  Eta = ETA_FIXED;
+  Eta = ETA_;
   #endif
   
 	// initialize the first cutvalues
@@ -200,7 +202,7 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		if (winner <= i)
 		{
       #ifndef PARAMETER_SELECTION
-      TmpCut = -etaSous[i]-(cutValue[channel][i]) / BETA_FIXED;
+      TmpCut = -etaSous[i]-(cutValue[channel][i]) / BETA_;
       #else
       //TmpCut = -etaSous[i]-(cutValue[channel][i]) / Beta;
       switch (Beta)
@@ -232,7 +234,7 @@ static void FBAR_AdaptCutValues(uint16_t channel, uint16_t winner)
 		else 
 		{
       #ifndef PARAMETER_SELECTION
-      TmpCut = etaAdd[i]-(cutValue[channel][i]) / BETA_FIXED;
+      TmpCut = etaAdd[i]-(cutValue[channel][i]) / BETA_;
       #else
       //TmpCut = etaAdd[i]-(cutValue[channel][i]) / Beta;
       switch (Beta)

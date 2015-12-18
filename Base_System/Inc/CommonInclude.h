@@ -5,9 +5,24 @@
 // 									Common Include
 // *************************************************************************
 
-//#define PARAMETER_SELECTION //enable the change of Beta
+/********************************************************************/
+//CHANGEABLE PARAMETER 
 
-#define COMPARISON // On compressing mode, compress only 4 chanel and send at the same time their non-compressed value to compare
+// This mode will generate an artifiacial signal (a sort of replacement of te RHD acquired signal) to test the system
+//#define TESTBUFFER
+
+//enable the change of Eta and Beta via receiver inputs
+//#define PARAMETER_SELECTION 
+
+// On compressing mode, compress only 4 chanel and send at the same time their non-compressed value to compare
+#define COMPARISON 
+
+#define ETA_      512					    // adaptation parameter
+#define BETA_     8					     // error parameter
+#define H_        120/128
+
+/********************************************************************/
+// FIXED PARAMETERS 
 
 /* GPIO command */
 #define LOW		0
@@ -31,8 +46,6 @@
 #define NBIT 				 	     2                 // resolution of the compression
 #define POW_2_NBIT  	    (1 << NBIT) 			// 2^NBIT
 #define CUT_VAL_SIZE 	    (POW_2_NBIT - 1) // number of cut value
-#define ETA_INIT          512					    // adaptation parameter
-#define BETA_INIT         8					     // error parameter
 
 #define FLAG_NO_UPDATE 0
 #define FLAG_UPDATE    1
@@ -44,6 +57,9 @@
 #define DEBUG_HIGH 	(GPIOA->BSRRL |= GPIO_PIN_15)
 #define DEBUG_LOW		(GPIOA->BSRRH |= GPIO_PIN_15)
 
+#define STATE_INIT	 __8ch_2bit__20kHz__C__
+#define OUTPUT_INIT  Usb
+
 /**************************************************************/
 //					Enum
 /**************************************************************/
@@ -53,7 +69,6 @@ typedef enum{
 
 } Output_device_t;
 
-
 typedef enum
 {
 	__8ch_2bit__20kHz__C__ = 0x01,
@@ -62,12 +77,6 @@ typedef enum
   __8ch_8bit__20kHz_NC__ = 0x04,
   
 } DataStateTypeDef;
-
-#define STATE_INIT	 __8ch_2bit__20kHz__C__
-#define OUTPUT_INIT  Usb
-
-#define BETA_FIXED            8
-#define ETA_FIXED             512
 
 #endif
 

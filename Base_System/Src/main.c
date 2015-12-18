@@ -36,7 +36,7 @@ const DataStateTypeDef stateSystem[4] = {
 
 static Output_device_t  Output_device;
 static DataStateTypeDef State;
-static int16_t Eta = ETA_INIT, Beta = BETA_INIT;
+static int16_t Eta = ETA_, Beta = BETA_;
 static uint8_t  EtaIndexToSend, BetaIndexToSend;
 
 extern uint8_t  betaInc;
@@ -63,8 +63,8 @@ int main(void)
 	  
   // SOFTWARE initialization
   Output_device = OUTPUT_INIT;
-  Eta           = ETA_INIT;
-  Beta          = BETA_INIT;
+  Eta           = ETA_;
+  Beta          = BETA_;
   State         = STATE_INIT;
   
   SetOutput(Output_device);	
