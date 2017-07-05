@@ -30,11 +30,6 @@ The purpose of this system is to log the the electrical activity of a rat's neur
 *. USB as power supply
 
 
-#### [This file]( https://github.com/pseudoincorrect/Electrophy_Base_System/UserManual.txt)  contain the directions to program the Embedded system through Keil Uvision or directly by programming through the ST-link-V2 by STMicroelectronics
-
-#### [This file]( https://github.com/pseudoincorrect/Electrophy_Base_System/Eagle/AssemblyDirection.txt) contain the directions to assemble the PCB
-
-
 ## Technical part
 
 On this version, we use the an ST Microelectronic Development board discovery F4 with a Microcontroler [STM32f411VET6](http://www.st.com/web/en/catalog/tools/PF260946) to interface the Nordic Semiconductor [Nrf24l01+](http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01) RF transceiver, the Digital to analog converter [DAC8568ICPW](http://fr.rs-online.com/web/p/cna-a-usage-general/7093131/) and the USB audio protocol.
